@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['product-md/**', '.github/workflows/ci.yml']
+  pull_request:
+    paths: ['product-md/**', '.github/workflows/ci.yml']
+
+defaults:
+  run:
+    working-directory: product-md
+
+jobs:
+  verify:
+    name: typecheck · lint · test · build
+    runs-on: ubuntu-latest
+
+    # The unit + integration suite runs against SQLite, so no service container is
+    # needed here. The migrate job below is what proves the PostgreSQL path still works.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: product-md/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          {
+            echo "APP_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))")"
+            echo "PAYMENT_WEBHOOK_SECRET=$(node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))")"
+            echo "CRON_SECRET=$(node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))")"
+          } >> .env
+
+      - run: npm run db:push
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  migrate:
+    name: PostgreSQL schema
+    runs-on: ubuntu-latest
+
+    # The SQLite schema is derived from the PostgreSQL one, so a change that is valid
+    # for SQLite could still be invalid for the production target. This job catches that.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: productmd
+          POSTGRES_PASSWORD: productmd
+          POSTGRES_DB: productmd
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U productmd"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_PROVIDER: postgresql
+      DATABASE_URL: postgresql://productmd:productmd@localhost:5432/productmd?schema=public
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: product-md/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          sed -i 's|^DATABASE_PROVIDER=.*|DATABASE_PROVIDER="postgresql"|' .env
+          sed -i 's|^DATABASE_URL=.*|DATABASE_URL="postgresql://productmd:productmd@localhost:5432/productmd?schema=public"|' .env
+          {
+            echo "APP_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))")"
+            echo "PAYMENT_WEBHOOK_SECRET=$(node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))")"
+            echo "CRON_SECRET=$(node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))")"
+          } >> .env
+
+      - name: Apply schema and seed
+        run: |
+          npm run db:push
+          npm run db:seed

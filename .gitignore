@@ -1,0 +1,31 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# local env & secrets
+.env
+.env.local
+.env.*.local
+
+# local dev database (SQLite fallback)
+prisma/dev.db
+prisma/dev.db-journal
+prisma/*.db
+prisma/*.db-*
+
+# local storage adapter + dev mailbox output
+.storage/
+.mail/
+
+# tooling caches
+*.tsbuildinfo
+.eslintcache
+coverage/
+playwright-report/
+test-results/
+.vercel
+
+# derived by scripts/prisma.mjs for the SQLite dev fallback
+prisma/schema.sqlite.prisma

@@ -1,0 +1,20 @@
+{
+  // tsx config for the CLI entry points under scripts/.
+  //
+  // The services these scripts call are marked `server-only`, whose default export
+  // throws the moment it is imported outside a React Server Component. The seed script
+  // sidesteps that with --conditions=react-server, but that is not an option here:
+  // the billing chain reaches next/navigation, and under that condition React 18
+  // resolves to react.shared-subset.js, which refuses to load outside experimental
+  // channels. Aliasing the package to a no-op is the narrower fix, and it applies only
+  // to scripts run with this config — the Next build still gets the real guard.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["src/*"],
+      "server-only": ["tests/stubs/server-only.ts"]
+    }
+  },
+  "include": ["../scripts/**/*.ts", "../src/**/*.ts"]
+}

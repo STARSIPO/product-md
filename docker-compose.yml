@@ -1,0 +1,70 @@
+# Product.md — local PostgreSQL stack.
+#
+# Two ways to use this file:
+#   docker compose up -d db          just the database, app runs on the host via npm run dev
+#   docker compose --profile app up  database + the built application
+#
+# The app service is behind a profile so the common case — a developer who only wants
+# a real Postgres to point DATABASE_URL at — does not also rebuild the image.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: productmd
+      POSTGRES_PASSWORD: productmd
+      POSTGRES_DB: productmd
+      # Deterministic collation so ORDER BY matches between machines.
+      POSTGRES_INITDB_ARGS: '--locale=C --encoding=UTF8'
+    ports:
+      - '5432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U productmd -d productmd']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    profiles: ['app']
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_PROVIDER: postgresql
+      DATABASE_URL: postgresql://productmd:productmd@db:5432/productmd?schema=public
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      # Generate real values before any non-local deployment:
+      #   node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+      APP_SECRET: ${APP_SECRET:?APP_SECRET is required}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:?PAYMENT_WEBHOOK_SECRET is required}
+      CRON_SECRET: ${CRON_SECRET:?CRON_SECRET is required}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      MAIL_DRIVER: ${MAIL_DRIVER:-console}
+      SMS_DRIVER: ${SMS_DRIVER:-mock}
+      PAYMENT_DRIVER: ${PAYMENT_DRIVER:-mock}
+      LISTING_DAILY_PRICE_BANI: ${LISTING_DAILY_PRICE_BANI:-100}
+      SELLER_TRIAL_DAYS: ${SELLER_TRIAL_DAYS:-30}
+      LOW_BALANCE_THRESHOLD_BANI: ${LOW_BALANCE_THRESHOLD_BANI:-1000}
+    ports:
+      - '3000:3000'
+    volumes:
+      # Only needed while STORAGE_DRIVER=local; S3 makes this obsolete.
+      - storage-data:/app/.storage
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://127.0.0.1:3000/api/health || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  db-data:
+  storage-data:
