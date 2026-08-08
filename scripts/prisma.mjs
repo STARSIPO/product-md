@@ -26,7 +26,10 @@ function readEnvFile() {
   if (!existsSync(file)) return {}
   /** @type {Record<string,string>} */
   const out = {}
-  for (const rawLine of readFileSync(file, 'utf8').split(/\r?\n/)) {
+  // Strip a UTF-8 BOM: Notepad and other Windows editors add one by default, and it
+  // would otherwise become part of the first key, silently hiding DATABASE_PROVIDER.
+  const contents = readFileSync(file, 'utf8').replace(/^﻿/, '')
+  for (const rawLine of contents.split(/\r?\n/)) {
     const line = rawLine.trim()
     if (!line || line.startsWith('#')) continue
     const eq = line.indexOf('=')
