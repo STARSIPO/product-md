@@ -43,7 +43,15 @@ export function SidebarNav({
   }
 
   return (
-    <nav aria-label={label} className="lg:sticky lg:top-4 lg:self-start">
+    /**
+     * `min-w-0` is load-bearing. This <nav> is a grid item, and a grid track sized `auto`
+     * takes its minimum from the item's min-content width — which, for a strip of eleven
+     * `min-w-max` tabs, is about 1060px. The inner `overflow-x-auto` never gets a chance
+     * to scroll, because the track it lives in has already grown to fit, and the whole
+     * page scrolls sideways instead. Overriding the automatic minimum lets the track
+     * collapse to the column width and hands the overflow back to the strip.
+     */
+    <nav aria-label={label} className="min-w-0 lg:sticky lg:top-4 lg:self-start">
       {/* Mobile: a scrollable tab strip that keeps every section one tap away. */}
       <div className="no-scrollbar -mx-4 overflow-x-auto border-b border-border px-4 lg:hidden">
         <ul className="flex min-w-max items-end gap-1">

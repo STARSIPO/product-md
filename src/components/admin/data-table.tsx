@@ -1,7 +1,18 @@
 import type { ReactNode } from 'react'
+import { ArrowRight, Check } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import { DataTableEmpty, TBody, TD, TH, THead, TR, Table, TableScroll } from '@/components/ui'
+import {
+  DataTableEmpty,
+  TBody,
+  TD,
+  TH,
+  THead,
+  TR,
+  Table,
+  TableScroll,
+  buttonVariants,
+} from '@/components/ui'
 
 /**
  * The admin list primitive.
@@ -50,7 +61,15 @@ export function DataTable<T>({
   const secondary = columns.filter((column) => column !== primary && !column.hideOnMobile)
 
   return (
-    <div className={cn('rounded-lg border border-border bg-card', className)}>
+    <div
+      className={cn(
+        'rounded-lg border border-border bg-card',
+        // Row actions are built from the shared controls, which top out at 42px — right
+        // for a desktop toolbar, two pixels short of a thumb. Below `md` they grow.
+        '[&_select]:min-h-[44px] md:[&_select]:min-h-[42px]',
+        className,
+      )}
+    >
       {/* ------------------------------------------------------- table (md+) */}
       <TableScroll className="hidden md:block">
         <Table>
@@ -150,20 +169,27 @@ export function TableToolbar({
       method="get"
       action={action}
       aria-label={label}
-      className={cn('rounded-lg border border-border bg-card p-4', className)}
+      className={cn(
+        'rounded-lg border border-border bg-card p-4',
+        // Same reason as in DataTable: the shared controls are 42px, and a filter bar is
+        // exactly what an operator pokes at one-handed on a phone.
+        '[&_select]:min-h-[44px] md:[&_select]:min-h-[42px]',
+        '[&_input]:min-h-[44px] md:[&_input]:min-h-[42px]',
+        className,
+      )}
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="submit"
-          className="inline-flex min-h-[42px] items-center justify-center rounded-md border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:min-h-[42px]"
         >
           {submitLabel}
         </button>
         {resetHref && resetLabel ? (
           <a
             href={resetHref}
-            className="inline-flex min-h-[42px] items-center justify-center rounded-md border border-transparent px-4 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-transparent px-4 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:min-h-[42px]"
           >
             {resetLabel}
           </a>
@@ -205,4 +231,102 @@ export function StatTile({
   }
 
   return <div className="rounded-lg border border-border bg-card px-4 py-3.5">{body}</div>
+}
+
+/**
+ * One entry of the "what needs me right now" queue on the overview page.
+ *
+ * A zero is not rendered as a zero. "0 жалоб" and "3 жалобы" look alike at a glance and
+ * both read as data; «всё чисто» reads as an answer, which is the only thing an operator
+ * opening this screen at 8am actually wants. A non-empty queue is the loud state — a
+ * tinted card, a large tabular number and a link straight into the filtered list.
+ */
+export function ActionQueueCard({
+  label,
+  count,
+  href,
+  clearLabel,
+  openLabel,
+  tone = 'attention',
+}: {
+  label: string
+  count: number
+  href: string
+  /** Shown instead of the number when the queue is empty. */
+  clearLabel: string
+  openLabel: string
+  tone?: 'attention' | 'critical'
+}) {
+  const pending = count > 0
+
+  return (
+    <a
+      href={href}
+      aria-label={`${label}: ${pending ? count : clearLabel}`}
+      className={cn(
+        'group flex min-h-[104px] flex-col justify-between rounded-lg border px-4 py-3.5 transition-[border-color,box-shadow] duration-150',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        pending
+          ? tone === 'critical'
+            ? 'border-destructive/30 bg-destructive-soft hover:shadow-pop'
+            : 'border-warning/35 bg-warning-soft hover:shadow-pop'
+          : 'border-border bg-card hover:border-primary/35 hover:shadow-pop',
+      )}
+    >
+      <p className="text-caption font-medium text-muted-foreground">{label}</p>
+
+      {pending ? (
+        <p
+          className={cn(
+            'tnum mt-2 text-h1 leading-none',
+            tone === 'critical' ? 'text-destructive' : 'text-warning',
+          )}
+        >
+          {count}
+        </p>
+      ) : (
+        <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-success">
+          <Check aria-hidden className="h-4 w-4" />
+          {clearLabel}
+        </p>
+      )}
+
+      <span className="mt-2 inline-flex items-center gap-1 text-caption text-muted-foreground">
+        {openLabel}
+        <ArrowRight aria-hidden className="h-3.5 w-3.5" />
+      </span>
+    </a>
+  )
+}
+
+/**
+ * CSV download for the list currently on screen.
+ *
+ * A plain link, not a fetch: the export is a GET route handler that streams
+ * `text/csv`, so the browser's own download machinery handles it and the URL — filters
+ * included — can be bookmarked or handed to a colleague.
+ */
+export function ExportLink({
+  href,
+  label,
+  className,
+}: {
+  href: string
+  label: string
+  className?: string
+}) {
+  return (
+    <a
+      href={href}
+      download
+      className={buttonVariants({
+        variant: 'outline',
+        size: 'sm',
+        // 36px is a desktop toolbar height; on a phone this has to stay thumb-sized.
+        className: cn('min-h-[44px] md:min-h-[36px]', className),
+      })}
+    >
+      {label}
+    </a>
+  )
 }

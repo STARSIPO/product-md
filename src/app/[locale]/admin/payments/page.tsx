@@ -9,8 +9,15 @@ import { PAYMENT_STATUSES } from '@/lib/constants'
 import { env } from '@/env'
 import { requireAdmin } from '@/server/auth/guards'
 import { db } from '@/server/db'
-import { DataTable, TableToolbar, type DataColumn } from '@/components/admin/data-table'
+import {
+  DataTable,
+  ExportLink,
+  TableToolbar,
+  type DataColumn,
+} from '@/components/admin/data-table'
+import { PaymentFailButton, WebhookRetryButton } from '@/components/admin/decision-dialog'
 import { Alert, Badge, Pagination, Select, StatusBadge } from '@/components/ui'
+import { stuckPaymentsWhere } from '../_lib/queries'
 
 /**
  * Payments and the raw webhook log.
@@ -20,6 +27,11 @@ import { Alert, Badge, Pagination, Select, StatusBadge } from '@/components/ui'
  * whether the callback arrived, whether its signature verified, and whether the handler
  * finished. A payment stuck in PENDING with an unprocessed webhook next to it is a
  * different problem from one with no webhook at all.
+ *
+ * Both recoveries live here too. Re-running a webhook is safe because crediting is keyed
+ * on the payment id, so the second press writes nothing; marking a payment FAILED is
+ * bookkeeping only and refuses to touch one that already succeeded — undoing a credit is
+ * a refund through the ledger, not a status edit.
  */
 
 export const dynamic = 'force-dynamic'
@@ -55,8 +67,9 @@ export default async function AdminPaymentsPage({
 
   const where: Prisma.PaymentWhereInput = status ? { status } : {}
 
-  const [total, rows, webhooks] = await Promise.all([
+  const [total, stuck, rows, webhooks] = await Promise.all([
     db.payment.count({ where }),
+    db.payment.count({ where: stuckPaymentsWhere() }),
     db.payment.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -154,6 +167,17 @@ export default async function AdminPaymentsPage({
         </span>
       ),
     },
+    {
+      key: 'actions',
+      header: t.common.actions,
+      align: 'right',
+      cell: (row) =>
+        row.status === 'SUCCEEDED' ? (
+          <span className="text-caption text-muted-foreground">—</span>
+        ) : (
+          <PaymentFailButton paymentId={row.id} />
+        ),
+    },
   ]
 
   const webhookColumns: DataColumn<WebhookRow>[] = [
@@ -200,12 +224,31 @@ export default async function AdminPaymentsPage({
         </span>
       ),
     },
+    {
+      key: 'actions',
+      header: t.common.actions,
+      align: 'right',
+      cell: (row) =>
+        // Only a callback the provider actually signed may be replayed, and only when it
+        // has not already completed cleanly.
+        row.signatureValid && (row.processedAt === null || row.error !== null) ? (
+          <WebhookRetryButton eventId={row.id} />
+        ) : (
+          <span className="text-caption text-muted-foreground">—</span>
+        ),
+    },
   ]
 
   return (
     <div className="space-y-6">
       {env.PAYMENT_DRIVER === 'mock' ? (
         <Alert variant="warning">{t.admin.driverMockWarning}</Alert>
+      ) : null}
+
+      {stuck > 0 ? (
+        <Alert variant="warning" title={t.admin.pendingPayments}>
+          {fmt(t.admin.totalRows, { count: stuck })} · {t.admin.retryWebhookHint}
+        </Alert>
       ) : null}
 
       <section className="space-y-5">
@@ -230,9 +273,19 @@ export default async function AdminPaymentsPage({
         </TableToolbar>
 
         <div>
-          <p className="mb-3 tnum text-sm text-muted-foreground">
-            {fmt(t.admin.totalRows, { count: total })}
-          </p>
+          <div className="mb-3 flex flex-wrap items-center gap-3">
+            <p className="tnum text-sm text-muted-foreground">
+              {fmt(t.admin.totalRows, { count: total })}
+            </p>
+            <ExportLink
+              className="ml-auto"
+              href={`${localePath(locale, 'admin', 'export')}${buildQuery({
+                entity: 'payments',
+                status,
+              })}`}
+              label={t.admin.exportCsv}
+            />
+          </div>
 
           <DataTable
             rows={rows}

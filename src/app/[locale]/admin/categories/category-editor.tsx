@@ -13,6 +13,7 @@ import {
   Textarea,
   useToast,
 } from '@/components/ui'
+import { cn } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n/provider'
 import { resolveErrorMessage, translate } from '@/app/[locale]/login/login-form'
 import { UNITS } from '@/lib/constants'
@@ -46,6 +47,20 @@ import {
 
 const ATTRIBUTE_TYPES = ['TEXT', 'NUMBER', 'SELECT', 'MULTISELECT', 'BOOL', 'DATE'] as const
 const APPLIES_TO = ['BOTH', 'PRODUCT', 'REQUEST'] as const
+
+/**
+ * The design system caps `size="sm"` at 36px, which is right on a desktop toolbar and
+ * too small for a thumb. Staff work these screens on a phone in a warehouse, so the
+ * compact controls grow to the 44px minimum below `md` and shrink back above it.
+ */
+const TOUCH = 'min-h-[44px] md:min-h-[36px]'
+
+/**
+ * Same reasoning for the text controls, which the design system sizes at 42px. The
+ * checkbox is excluded on purpose — it draws its own 20px box inside a 44px label row.
+ */
+const FIELDS =
+  '[&_input:not([type=checkbox])]:min-h-[44px] md:[&_input:not([type=checkbox])]:min-h-[42px] [&_select]:min-h-[44px] md:[&_select]:min-h-[42px]'
 
 type AnyActionResult = ActionResult<unknown>
 
@@ -129,7 +144,7 @@ export function CategoryEditor({
   const isNew = values.id === ''
 
   return (
-    <section className="rounded-lg border border-border bg-card p-4">
+    <section className={cn('rounded-lg border border-border bg-card p-4', FIELDS)}>
       <h2 className="text-h3">{isNew ? t.admin.newCategory : t.admin.editCategory}</h2>
 
       {error ? (
@@ -255,7 +270,7 @@ export function CategoryEditor({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2 [&>button]:min-h-[44px] md:[&>button]:min-h-[42px]">
         <Button
           loading={pending}
           onClick={() =>
@@ -393,7 +408,7 @@ function AttributeCard({ attribute }: { attribute: AttributeFormValues }) {
   const hasOptions = values.type === 'SELECT' || values.type === 'MULTISELECT'
 
   return (
-    <article className="rounded-lg border border-border bg-card p-4">
+    <article className={cn('rounded-lg border border-border bg-card p-4', FIELDS)}>
       <h3 className="text-sm font-semibold">
         {isNew ? t.admin.newAttribute : `${values.labelRu} · ${values.key}`}
       </h3>
@@ -533,6 +548,7 @@ function AttributeCard({ attribute }: { attribute: AttributeFormValues }) {
       <div className="mt-3 flex flex-wrap gap-2">
         <Button
           size="sm"
+          className={TOUCH}
           loading={pending}
           onClick={() =>
             run(() =>
@@ -561,6 +577,7 @@ function AttributeCard({ attribute }: { attribute: AttributeFormValues }) {
         {!isNew ? (
           <Button
             size="sm"
+            className={TOUCH}
             variant="destructive"
             loading={pending}
             onClick={() => run(() => deleteAttributeAction(values.id))}
@@ -629,7 +646,7 @@ function OptionRow({
   const isNew = values.id === ''
 
   return (
-    <div className="flex flex-wrap items-end gap-2">
+    <div className={cn('flex flex-wrap items-end gap-2', FIELDS)}>
       <label className="min-w-[120px] flex-1">
         <span className="mb-1 block text-caption text-muted-foreground">{t.admin.optionValue}</span>
         <Input
@@ -657,6 +674,7 @@ function OptionRow({
 
       <Button
         size="sm"
+        className={TOUCH}
         variant="outline"
         loading={pending}
         onClick={() =>
@@ -678,6 +696,7 @@ function OptionRow({
       {!isNew ? (
         <Button
           size="sm"
+          className={TOUCH}
           variant="ghost"
           loading={pending}
           onClick={() => run(() => deleteAttributeOptionAction(values.id))}
@@ -721,7 +740,7 @@ export function SynonymRow({
   const isNew = values.id === ''
 
   return (
-    <div className="flex flex-wrap items-end gap-2 px-4 py-3">
+    <div className={cn('flex flex-wrap items-end gap-2 px-4 py-3', FIELDS)}>
       <label className="min-w-[160px] flex-[2]">
         <span className="mb-1 block text-caption text-muted-foreground">{t.admin.synonymTerm}</span>
         <Input
@@ -786,6 +805,7 @@ export function SynonymRow({
 
       <Button
         size="sm"
+        className={TOUCH}
         variant="outline"
         loading={pending}
         onClick={() =>
@@ -807,6 +827,7 @@ export function SynonymRow({
       {!isNew ? (
         <Button
           size="sm"
+          className={TOUCH}
           variant="ghost"
           loading={pending}
           onClick={() => run(() => deleteSynonymAction(values.id))}
@@ -854,7 +875,7 @@ export function SuggestTester({ locale }: { locale: 'ru' | 'ro' }) {
   }
 
   return (
-    <section className="rounded-lg border border-border bg-card p-4">
+    <section className={cn('rounded-lg border border-border bg-card p-4', FIELDS)}>
       <h2 className="text-h3">{t.admin.testQuery}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t.admin.testQueryHint}</p>
 
@@ -868,7 +889,7 @@ export function SuggestTester({ locale }: { locale: 'ru' | 'ro' }) {
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
-        <Button loading={pending} onClick={test}>
+        <Button className="min-h-[44px] md:min-h-[42px]" loading={pending} onClick={test}>
           {t.admin.testQueryRun}
         </Button>
       </div>

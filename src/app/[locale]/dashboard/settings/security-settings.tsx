@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,7 +8,7 @@ import type { z } from 'zod'
 import { Download, KeyRound, ShieldCheck, Trash2 } from 'lucide-react'
 import { Alert, Button, Field, Input, Select, useToast } from '@/components/ui'
 import { useI18n } from '@/lib/i18n/provider'
-import { LOCALES, LOCALE_LABELS, localePath } from '@/lib/i18n/config'
+import { LOCALES, LOCALE_LABELS, isLocale, localePath, switchLocalePath } from '@/lib/i18n/config'
 import { changePasswordSchema, totpCodeSchema } from '@/lib/validation'
 import { changePassword, confirmTotpEnrollment, disableTotp } from '@/server/actions/auth'
 import {
@@ -37,8 +37,9 @@ export interface AccountInitialValues {
 }
 
 export function AccountSettingsForm({ initial }: { initial: AccountInitialValues }) {
-  const { t, fmt } = useI18n()
+  const { t, fmt, locale } = useI18n()
   const router = useRouter()
+  const pathname = usePathname()
   const { toast } = useToast()
 
   const [values, setValues] = useState(initial)
@@ -70,6 +71,19 @@ export function AccountSettingsForm({ initial }: { initial: AccountInitialValues
 
       setMessage({ variant: 'success', text: t.settings.saved })
       toast({ title: t.settings.saved, variant: 'success' })
+
+      /**
+       * The action already wrote `User.locale` and re-pinned the NEXT_LOCALE cookie, but
+       * the language a page is rendered in comes from the *URL*, not from either of
+       * those. Without this the user picks "Română", is told it was saved, and keeps
+       * reading Russian — which reads as a bug, because it is one.
+       */
+      const next = values.locale
+      if (isLocale(next) && next !== locale) {
+        router.replace(switchLocalePath(pathname, locale, next))
+        toast({ title: t.settings.localeSwitched, variant: 'success' })
+      }
+
       router.refresh()
     })
   }
@@ -133,7 +147,7 @@ export function AccountSettingsForm({ initial }: { initial: AccountInitialValues
         </Field>
       </div>
 
-      <Button type="submit" loading={pending}>
+      <Button type="submit" size="lg" loading={pending} fullWidth className="sm:w-auto">
         {t.common.save}
       </Button>
     </form>
@@ -232,7 +246,7 @@ export function ChangePasswordForm() {
         </Field>
       </div>
 
-      <Button type="submit" loading={pending}>
+      <Button type="submit" size="lg" loading={pending} fullWidth className="sm:w-auto">
         <KeyRound className="h-4 w-4" aria-hidden />
         {t.settings.changePassword}
       </Button>
@@ -336,7 +350,7 @@ export function TwoFactorSettings({
       </div>
 
       {!enabled && mode !== 'enable' ? (
-        <Button loading={pending} onClick={begin}>
+        <Button loading={pending} size="lg" onClick={begin} fullWidth className="sm:w-auto">
           {t.settings.twoFactorEnable}
         </Button>
       ) : null}
@@ -347,6 +361,8 @@ export function TwoFactorSettings({
         ) : (
           <Button
             variant="outline"
+            fullWidth
+            className="sm:w-auto"
             onClick={() => {
               setMode('disable')
               setFormError(null)
@@ -404,8 +420,8 @@ export function TwoFactorSettings({
             />
           </Field>
 
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" loading={pending}>
+          <div className="grid gap-2 sm:flex sm:flex-wrap">
+            <Button type="submit" size="lg" loading={pending}>
               {mode === 'disable' ? t.settings.twoFactorDisable : t.settings.twoFactorConfirm}
             </Button>
             <Button
@@ -503,6 +519,8 @@ export function SessionsList({ sessions }: { sessions: readonly SessionRow[] }) 
       {sessions.length > 1 ? (
         <Button
           variant="outline"
+          fullWidth
+          className="sm:w-auto"
           loading={pending}
           onClick={() =>
             startTransition(async () => {
@@ -537,7 +555,7 @@ export function DataSettings() {
       <a
         href="/api/account/export"
         download
-        className="inline-flex min-h-[42px] items-center gap-2 rounded-md border border-input bg-card px-4 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md border border-input bg-card px-4 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-auto"
       >
         <Download className="h-4 w-4" aria-hidden />
         {t.settings.exportDataButton}
@@ -582,6 +600,9 @@ export function DeleteAccountSection() {
 
       <Button
         variant="destructive"
+        size="lg"
+        fullWidth
+        className="sm:w-auto"
         disabled={!matches}
         loading={pending}
         onClick={() =>

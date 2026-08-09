@@ -9,8 +9,13 @@ import { buildQuery, parsePage } from '@/lib/utils'
 import { REQUEST_STATUSES } from '@/lib/constants'
 import { requireAdmin } from '@/server/auth/guards'
 import { db } from '@/server/db'
-import { DataTable, TableToolbar, type DataColumn } from '@/components/admin/data-table'
-import { EntityStatusActions } from '@/components/admin/decision-dialog'
+import {
+  DataTable,
+  ExportLink,
+  TableToolbar,
+  type DataColumn,
+} from '@/components/admin/data-table'
+import { RequestAdminActions } from '@/components/admin/decision-dialog'
 import { Badge, Input, Pagination, Select, StatusBadge } from '@/components/ui'
 
 /**
@@ -154,9 +159,8 @@ export default async function AdminRequestsPage({
       header: t.common.actions,
       align: 'right',
       cell: (row) => (
-        <EntityStatusActions
-          kind="request"
-          entityId={row.id}
+        <RequestAdminActions
+          requestId={row.id}
           status={row.status}
           statusOptions={statusOptions}
         />
@@ -191,9 +195,20 @@ export default async function AdminRequestsPage({
       </TableToolbar>
 
       <div>
-        <p className="mb-3 tnum text-sm text-muted-foreground">
-          {fmt(t.admin.totalRows, { count: total })}
-        </p>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <p className="tnum text-sm text-muted-foreground">
+            {fmt(t.admin.totalRows, { count: total })}
+          </p>
+          <ExportLink
+            className="ml-auto"
+            href={`${localePath(locale, 'admin', 'export')}${buildQuery({
+              entity: 'requests',
+              q,
+              status,
+            })}`}
+            label={t.admin.exportCsv}
+          />
+        </div>
 
         <DataTable
           rows={rows}

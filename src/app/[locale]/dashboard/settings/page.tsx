@@ -1,13 +1,19 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { getDictionary, resolveLocale } from '@/lib/i18n'
-import { localePath } from '@/lib/i18n/config'
+import { localePath, type Locale } from '@/lib/i18n/config'
 import { formatDateTime } from '@/lib/i18n/format'
+import { cn } from '@/lib/utils'
 import { hashToken } from '@/server/crypto'
 import { SESSION_COOKIE } from '@/server/auth/session'
 import { requireUser } from '@/server/auth/guards'
 import { db } from '@/server/db'
-import { Alert, Card } from '@/components/ui'
+import { Alert, Card, buttonVariants } from '@/components/ui'
+import {
+  NotificationPreferences,
+  type NotificationPreferenceRow,
+} from '@/components/dashboard/notification-preferences'
 import {
   AccountSettingsForm,
   ChangePasswordForm,
@@ -19,15 +25,39 @@ import {
 } from './security-settings'
 
 /**
- * Account settings.
+ * Account settings, in four sections instead of one scroll.
  *
- * The session list is the reason this page is not cached: "which devices are signed in
- * as me" is only useful if it is true right now. Sessions are matched against the
- * current cookie by hash — the raw token never leaves the cookie, so the page can mark
- * "this device" without ever handling it.
+ * The old page stacked profile, password, two-factor, sessions, export and account
+ * deletion on top of each other — six blocks a person had to scroll past to reach the
+ * one they came for, and on a phone that is most of a minute of thumb work.
+ *
+ * The section lives in the URL rather than in component state, so the whole screen stays
+ * a Server Component: only the block being looked at is rendered and only its JavaScript
+ * ships. It also means a link can point at "security" directly, which is what the admin
+ * two-factor guard needs.
+ *
+ * The session list is why nothing here is cached: "which devices are signed in as me" is
+ * only useful if it is true right now. Sessions are matched against the current cookie by
+ * hash, so the page can mark "this device" without ever handling the raw token.
  */
 
 export const dynamic = 'force-dynamic'
+
+const TABS = ['profile', 'security', 'notifications', 'data'] as const
+type SettingsTab = (typeof TABS)[number]
+
+/** Exactly the columns the session list needs — the raw token hash never leaves here. */
+interface SessionSelection {
+  id: string
+  tokenHash: string
+  userAgent: string | null
+  ip: string | null
+  createdAt: Date
+}
+
+function resolveTab(value: string | undefined): SettingsTab {
+  return (TABS as readonly string[]).includes(value ?? '') ? (value as SettingsTab) : 'profile'
+}
 
 export async function generateMetadata({
   params,
@@ -43,22 +73,39 @@ export default async function DashboardSettingsPage({
   searchParams,
 }: {
   params: { locale: string }
-  searchParams: { setup2fa?: string }
+  searchParams: { setup2fa?: string; tab?: string }
 }) {
   const locale = resolveLocale(params.locale)
   const t = await getDictionary(locale)
 
   const user = await requireUser(locale, localePath(locale, 'dashboard', 'settings'))
 
+  const setup2fa = searchParams.setup2fa === '1'
+  // The admin guard sends people here to enrol; that lives under Security, so open it.
+  const tab = setup2fa ? 'security' : resolveTab(searchParams.tab)
+
+  // Only the visible section is queried. A person opening "notifications" has no reason
+  // to pay for a session lookup they will not see.
+  const sessions: SessionSelection[] =
+    tab === 'security'
+      ? await db.session.findMany({
+          where: { userId: user.id, revokedAt: null, expiresAt: { gt: new Date() } },
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, tokenHash: true, userAgent: true, ip: true, createdAt: true },
+          take: 25,
+        })
+      : []
+
+  const preferences: NotificationPreferenceRow[] =
+    tab === 'notifications'
+      ? await db.notificationPreference.findMany({
+          where: { userId: user.id },
+          select: { type: true, inApp: true, email: true, sms: true, push: true },
+        })
+      : []
+
   const token = cookies().get(SESSION_COOKIE)?.value
   const currentHash = token ? hashToken(token) : null
-
-  const sessions = await db.session.findMany({
-    where: { userId: user.id, revokedAt: null, expiresAt: { gt: new Date() } },
-    orderBy: { createdAt: 'desc' },
-    select: { id: true, tokenHash: true, userAgent: true, ip: true, createdAt: true },
-    take: 25,
-  })
 
   const rows: SessionRow[] = sessions.map((session) => ({
     id: session.id,
@@ -68,77 +115,179 @@ export default async function DashboardSettingsPage({
     current: currentHash !== null && session.tokenHash === currentHash,
   }))
 
-  const setup2fa = searchParams.setup2fa === '1'
+  const labels: Record<SettingsTab, string> = {
+    profile: t.settings.profile,
+    security: t.settings.security,
+    notifications: t.settings.notifications,
+    data: t.settings.data,
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <h1 className="text-h1">{t.settings.title}</h1>
 
-      {/* The admin guard redirects here when two-factor is missing; say why. */}
+      <SettingsTabs locale={locale} active={tab} labels={labels} label={t.settings.tabsLabel} />
+
       {setup2fa && !user.twoFactorEnabled ? (
         <Alert variant="warning">{t.settings.setup2faNotice}</Alert>
       ) : null}
 
-      <Section id="settings-account" title={t.settings.account}>
-        <AccountSettingsForm
-          initial={{
-            name: user.name,
-            email: user.email ?? '',
-            phone: user.phone ?? '',
-            locale: user.locale === 'ro' ? 'ro' : 'ru',
-          }}
-        />
-      </Section>
+      {tab === 'profile' ? (
+        <>
+          <Block id="settings-account" title={t.settings.account} description={t.settings.profileHint}>
+            <AccountSettingsForm
+              initial={{
+                name: user.name,
+                email: user.email ?? '',
+                phone: user.phone ?? '',
+                locale: user.locale === 'ro' ? 'ro' : 'ru',
+              }}
+            />
+          </Block>
 
-      <Section id="settings-password" title={t.settings.changePassword}>
-        <ChangePasswordForm />
-      </Section>
+          {/* The company profile is a different object with a different audience; it gets
+              its own screen rather than another forty fields under this one. */}
+          <Block
+            id="settings-company"
+            title={t.settings.company}
+            description={t.settings.companyLinkHint}
+          >
+            <Link
+              href={localePath(locale, 'dashboard', 'company')}
+              className={buttonVariants({ variant: 'outline', fullWidth: true, className: 'sm:w-auto' })}
+            >
+              {t.settings.companyLink}
+            </Link>
+          </Block>
+        </>
+      ) : null}
 
-      <Section id="settings-2fa" title={t.settings.twoFactor}>
-        <TwoFactorSettings
-          enabled={user.twoFactorEnabled}
-          isAdmin={user.role === 'ADMIN'}
-          autoStart={setup2fa}
-        />
-      </Section>
+      {tab === 'security' ? (
+        <>
+          <Block
+            id="settings-password"
+            title={t.settings.changePassword}
+            description={t.settings.securityHint}
+          >
+            <ChangePasswordForm />
+          </Block>
 
-      <Section id="settings-sessions" title={t.settings.sessions}>
-        <SessionsList sessions={rows} />
-      </Section>
+          <Block id="settings-2fa" title={t.settings.twoFactor}>
+            <TwoFactorSettings
+              enabled={user.twoFactorEnabled}
+              isAdmin={user.role === 'ADMIN'}
+              autoStart={setup2fa}
+            />
+          </Block>
 
-      <Section id="settings-data" title={t.settings.data}>
-        <DataSettings />
-      </Section>
+          <Block id="settings-sessions" title={t.settings.sessions}>
+            {rows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t.settings.noSessions}</p>
+            ) : (
+              <SessionsList sessions={rows} />
+            )}
+          </Block>
+        </>
+      ) : null}
 
-      <Section id="settings-delete" title={t.settings.deleteAccount} tone="destructive">
-        <DeleteAccountSection />
-      </Section>
+      {tab === 'notifications' ? (
+        <Block
+          id="settings-notifications"
+          title={t.notifications.settings}
+          description={t.settings.notificationsHint}
+        >
+          <NotificationPreferences preferences={preferences} locale={locale} />
+        </Block>
+      ) : null}
+
+      {tab === 'data' ? (
+        <>
+          <Block id="settings-data" title={t.settings.exportData} description={t.settings.dataHint}>
+            <DataSettings />
+          </Block>
+
+          <Block id="settings-delete" title={t.settings.deleteAccount} tone="destructive">
+            <DeleteAccountSection />
+          </Block>
+        </>
+      ) : null}
     </div>
   )
 }
 
-function Section({
+/**
+ * Links, not buttons: the section is part of the address, so it survives a refresh, can
+ * be shared, and needs no JavaScript to change. The strip scrolls sideways on a phone
+ * rather than collapsing — four labels are not worth hiding behind a menu.
+ */
+function SettingsTabs({
+  locale,
+  active,
+  labels,
+  label,
+}: {
+  locale: Locale
+  active: SettingsTab
+  labels: Record<SettingsTab, string>
+  label: string
+}) {
+  const base = localePath(locale, 'dashboard', 'settings')
+
+  return (
+    <nav
+      aria-label={label}
+      className="no-scrollbar -mx-4 overflow-x-auto border-b border-border px-4 sm:mx-0 sm:px-0"
+    >
+      <ul className="flex min-w-max items-end gap-1">
+        {TABS.map((tab) => {
+          const isActive = tab === active
+          return (
+            <li key={tab}>
+              <Link
+                href={tab === 'profile' ? base : `${base}?tab=${tab}`}
+                aria-current={isActive ? 'page' : undefined}
+                className={cn(
+                  'relative inline-flex min-h-[44px] items-center whitespace-nowrap rounded-t-sm px-3 pb-2.5 pt-2 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                  "after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:content-['']",
+                  isActive
+                    ? 'font-semibold text-primary after:bg-primary'
+                    : 'font-medium text-muted-foreground after:bg-transparent hover:text-foreground',
+                )}
+              >
+                {labels[tab]}
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
+    </nav>
+  )
+}
+
+function Block({
   id,
   title,
+  description,
   tone = 'default',
   children,
 }: {
   id: string
   title: string
+  description?: string
   tone?: 'default' | 'destructive'
   children: React.ReactNode
 }) {
   return (
-    <section aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`} className="mb-3 text-h3">
+    <section aria-labelledby={id}>
+      <h2 id={id} className="text-h3">
         {title}
       </h2>
-      <Card
-        id={id}
-        className={
-          tone === 'destructive' ? 'border-destructive/30 p-4 sm:p-5' : 'p-4 sm:p-5'
-        }
-      >
+      {description ? (
+        <p className="mb-3 mt-1 text-sm text-muted-foreground">{description}</p>
+      ) : (
+        <div className="mb-3" />
+      )}
+      <Card className={cn('p-4 sm:p-5', tone === 'destructive' && 'border-destructive/30')}>
         {children}
       </Card>
     </section>

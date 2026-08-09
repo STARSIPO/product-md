@@ -9,7 +9,12 @@ import { buildQuery, parsePage } from '@/lib/utils'
 import { COMPANY_STATUSES } from '@/lib/constants'
 import { requireAdmin } from '@/server/auth/guards'
 import { db } from '@/server/db'
-import { DataTable, TableToolbar, type DataColumn } from '@/components/admin/data-table'
+import {
+  DataTable,
+  ExportLink,
+  TableToolbar,
+  type DataColumn,
+} from '@/components/admin/data-table'
 import { CompanyActions } from '@/components/admin/decision-dialog'
 import { Badge, Input, Pagination, Select, StatusBadge } from '@/components/ui'
 
@@ -114,7 +119,7 @@ export default async function AdminCompaniesPage({
       cell: (row) => (
         <div className="min-w-0">
           <Link
-            href={localePath(locale, 'suppliers', row.slug)}
+            href={localePath(locale, 'admin', 'companies', row.id)}
             className="rounded font-medium text-primary hover:text-primary-hover"
           >
             {row.displayName}
@@ -217,9 +222,20 @@ export default async function AdminCompaniesPage({
       </TableToolbar>
 
       <div>
-        <p className="mb-3 tnum text-sm text-muted-foreground">
-          {fmt(t.admin.totalRows, { count: total })}
-        </p>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <p className="tnum text-sm text-muted-foreground">
+            {fmt(t.admin.totalRows, { count: total })}
+          </p>
+          <ExportLink
+            className="ml-auto"
+            href={`${localePath(locale, 'admin', 'export')}${buildQuery({
+              entity: 'companies',
+              q,
+              status,
+            })}`}
+            label={t.admin.exportCsv}
+          />
+        </div>
 
         <DataTable
           rows={rows}

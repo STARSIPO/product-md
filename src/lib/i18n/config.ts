@@ -48,6 +48,7 @@ export const ROUTE_SEGMENTS = {
   pricing: { ru: 'pricing', ro: 'tarife' },
   verification: { ru: 'verification', ro: 'verificare' },
   analytics: { ru: 'analytics', ro: 'analiza' },
+  statistics: { ru: 'statistics', ro: 'statistica' },
   settings: { ru: 'settings', ro: 'setari' },
   login: { ru: 'login', ro: 'autentificare' },
   register: { ru: 'register', ro: 'inregistrare' },

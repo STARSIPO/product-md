@@ -8,8 +8,13 @@ import { buildQuery, parsePage } from '@/lib/utils'
 import { DEAL_STATUSES } from '@/lib/constants'
 import { requireAdmin } from '@/server/auth/guards'
 import { db } from '@/server/db'
-import { DataTable, TableToolbar, type DataColumn } from '@/components/admin/data-table'
-import { EntityStatusActions } from '@/components/admin/decision-dialog'
+import {
+  DataTable,
+  ExportLink,
+  TableToolbar,
+  type DataColumn,
+} from '@/components/admin/data-table'
+import { DealAdminActions } from '@/components/admin/decision-dialog'
 import { Input, Pagination, Select, StatusBadge } from '@/components/ui'
 
 /**
@@ -86,6 +91,12 @@ export default async function AdminDealsPage({
     value,
     label: dealStatuses[value] ?? value,
   }))
+  // Where a dispute may land once it is settled; anything else would leave the deal in a
+  // state neither party can act on.
+  const disputeExits = (['CONFIRMED', 'COMPLETED', 'CANCELLED'] as const).map((value) => ({
+    value,
+    label: dealStatuses[value] ?? value,
+  }))
 
   type Row = (typeof rows)[number]
 
@@ -146,11 +157,11 @@ export default async function AdminDealsPage({
       header: t.common.actions,
       align: 'right',
       cell: (row) => (
-        <EntityStatusActions
-          kind="deal"
-          entityId={row.id}
+        <DealAdminActions
+          dealId={row.id}
           status={row.status}
           statusOptions={statusOptions}
+          disputeExits={disputeExits}
         />
       ),
     },
@@ -183,9 +194,20 @@ export default async function AdminDealsPage({
       </TableToolbar>
 
       <div>
-        <p className="mb-3 tnum text-sm text-muted-foreground">
-          {fmt(t.admin.totalRows, { count: total })}
-        </p>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <p className="tnum text-sm text-muted-foreground">
+            {fmt(t.admin.totalRows, { count: total })}
+          </p>
+          <ExportLink
+            className="ml-auto"
+            href={`${localePath(locale, 'admin', 'export')}${buildQuery({
+              entity: 'deals',
+              q,
+              status,
+            })}`}
+            label={t.admin.exportCsv}
+          />
+        </div>
 
         <DataTable
           rows={rows}

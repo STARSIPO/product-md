@@ -278,6 +278,7 @@ export const FEATURE_FLAGS = union([
   'PHONE_AUTH_ENABLED',
   'REGISTRATION_OPEN',
   'PUBLIC_REQUESTS_ENABLED',
+  'REQUIRE_ADMIN_2FA',
 ])
 export type FeatureFlagKey = (typeof FEATURE_FLAGS)[number]
 
@@ -288,6 +289,11 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureFlagKey, boolean> = {
   PHONE_AUTH_ENABLED: true,
   REGISTRATION_OPEN: true,
   PUBLIC_REQUESTS_ENABLED: true,
+  // On by default: the admin panel can change roles, adjust balances and switch
+  // billing off, so a stolen password alone must not be enough. The owner can turn it
+  // off from Feature flags for a demo, which is a deliberate, audited choice rather
+  // than a gap.
+  REQUIRE_ADMIN_2FA: true,
 }
 
 // --- notifications -----------------------------------------------------------

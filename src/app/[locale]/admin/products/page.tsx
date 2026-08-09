@@ -9,9 +9,14 @@ import { buildQuery, parsePage } from '@/lib/utils'
 import { PRODUCT_STATUSES } from '@/lib/constants'
 import { requireAdmin } from '@/server/auth/guards'
 import { db } from '@/server/db'
-import { DataTable, TableToolbar, type DataColumn } from '@/components/admin/data-table'
-import { EntityStatusActions } from '@/components/admin/decision-dialog'
-import { Input, Pagination, Select, StatusBadge } from '@/components/ui'
+import {
+  DataTable,
+  ExportLink,
+  TableToolbar,
+  type DataColumn,
+} from '@/components/admin/data-table'
+import { ListingAdminActions } from '@/components/admin/decision-dialog'
+import { Badge, Input, Pagination, Select, StatusBadge } from '@/components/ui'
 
 /**
  * Listing administration.
@@ -20,6 +25,10 @@ import { Input, Pagination, Select, StatusBadge } from '@/components/ui'
  * cases moderation cannot express: unblocking after an appeal, archiving the listings of
  * a company that has left, pulling something dangerous immediately. Each override is
  * audited with its reason.
+ *
+ * Alongside it sit the editorial levers that have no moderation equivalent at all: a
+ * free bump, a pin on the home page, and the escape hatch for a listing the nightly job
+ * paused because the balance ran out but the money arrived by bank transfer.
  */
 
 export const dynamic = 'force-dynamic'
@@ -76,6 +85,9 @@ export default async function AdminProductsPage({
         unit: true,
         viewsCount: true,
         createdAt: true,
+        isHomepagePinned: true,
+        pausedForBalance: true,
+        bumpedAt: true,
         company: { select: { id: true, displayName: true } },
       },
     }),
@@ -125,7 +137,19 @@ export default async function AdminProductsPage({
       key: 'status',
       header: t.common.status,
       cell: (row) => (
-        <StatusBadge status={row.status} label={productStatuses[row.status] ?? row.status} />
+        <span className="inline-flex flex-wrap items-center gap-1">
+          <StatusBadge status={row.status} label={productStatuses[row.status] ?? row.status} />
+          {row.isHomepagePinned ? (
+            <Badge variant="primary" size="sm">
+              {t.admin.homepagePinned}
+            </Badge>
+          ) : null}
+          {row.pausedForBalance ? (
+            <Badge variant="warning" size="sm">
+              {t.admin.pausedForBalance}
+            </Badge>
+          ) : null}
+        </span>
       ),
     },
     {
@@ -149,11 +173,12 @@ export default async function AdminProductsPage({
       header: t.common.actions,
       align: 'right',
       cell: (row) => (
-        <EntityStatusActions
-          kind="product"
-          entityId={row.id}
+        <ListingAdminActions
+          productId={row.id}
           status={row.status}
           statusOptions={statusOptions}
+          pinned={row.isHomepagePinned}
+          pausedForBalance={row.pausedForBalance}
         />
       ),
     },
@@ -186,9 +211,20 @@ export default async function AdminProductsPage({
       </TableToolbar>
 
       <div>
-        <p className="mb-3 tnum text-sm text-muted-foreground">
-          {fmt(t.admin.totalRows, { count: total })}
-        </p>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <p className="tnum text-sm text-muted-foreground">
+            {fmt(t.admin.totalRows, { count: total })}
+          </p>
+          <ExportLink
+            className="ml-auto"
+            href={`${localePath(locale, 'admin', 'export')}${buildQuery({
+              entity: 'products',
+              q,
+              status,
+            })}`}
+            label={t.admin.exportCsv}
+          />
+        </div>
 
         <DataTable
           rows={rows}

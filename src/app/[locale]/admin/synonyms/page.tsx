@@ -6,6 +6,7 @@ import { buildQuery, parsePage } from '@/lib/utils'
 import { requireAdmin } from '@/server/auth/guards'
 import { db } from '@/server/db'
 import { TableToolbar } from '@/components/admin/data-table'
+import { BulkSynonymForm } from '@/components/admin/decision-dialog'
 import {
   SuggestTester,
   SynonymRow,
@@ -204,6 +205,12 @@ export default async function AdminSynonymsPage({
           }}
         />
       </div>
+
+      <BulkSynonymForm
+        categories={options.map((option) => ({ value: option.id, label: option.label }))}
+        defaultCategoryId={category ?? ''}
+        defaultLocale={synonymLocale === 'ro' ? 'ro' : 'ru'}
+      />
 
       <SuggestTester locale={locale} />
     </div>

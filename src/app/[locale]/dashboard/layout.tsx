@@ -15,7 +15,7 @@ import { SidebarNav, type SidebarNavItem } from '@/components/dashboard/sidebar-
  *   1. Access. `requireUser` re-reads the session from the database, and a user who
  *      has not finished onboarding is sent to finish it — every page below this
  *      layout can then assume a company exists.
- *   2. Which sections exist at all. A pure buyer has no listings, no analytics and no
+ *   2. Which sections exist at all. A pure buyer has no listings, no statistics and no
  *      balance to spend, so those links are not rendered for them; a pure seller has
  *      no purchase requests. This is presentation only — each page re-checks its own
  *      guard, because a hidden link is not an access control.
@@ -88,7 +88,7 @@ export default async function DashboardLayout({
 
   if (user.isSeller) {
     items.push(
-      { href: localePath(locale, 'dashboard', 'analytics'), label: t.dashboard.analytics },
+      { href: localePath(locale, 'dashboard', 'statistics'), label: t.dashboard.statistics },
       { href: localePath(locale, 'dashboard', 'balance'), label: t.dashboard.balance },
     )
   }

@@ -3,7 +3,7 @@ import { getDictionary, resolveLocale } from '@/lib/i18n'
 import { localePath } from '@/lib/i18n/config'
 import { requireModerator } from '@/server/auth/guards'
 import { getQueueCounts } from '@/server/services/moderation'
-import { AdminNav } from '@/components/admin/admin-nav'
+import { AdminNav, type AdminNavGroup } from '@/components/admin/admin-nav'
 
 /**
  * Moderation shell.
@@ -40,31 +40,37 @@ export default async function ModerationLayout({
   await requireModerator(locale)
   const counts = await getQueueCounts()
 
-  const items = [
+  const groups: AdminNavGroup[] = [
     {
-      href: localePath(locale, 'moderation'),
-      label: t.moderation.queue,
-      count: counts.total,
-    },
-    {
-      href: localePath(locale, 'moderation', 'products'),
-      label: t.moderation.products,
-      count: counts.PRODUCT ?? 0,
-    },
-    {
-      href: localePath(locale, 'moderation', 'documents'),
-      label: t.moderation.documents,
-      count: counts.DOCUMENT ?? 0,
-    },
-    {
-      href: localePath(locale, 'moderation', 'complaints'),
-      label: t.moderation.complaints,
-      count: counts.COMPLAINT ?? 0,
-    },
-    {
-      href: localePath(locale, 'moderation', 'reviews'),
-      label: t.moderation.reviews,
-      count: counts.REVIEW ?? 0,
+      id: 'queue',
+      label: '',
+      items: [
+        {
+          href: localePath(locale, 'moderation'),
+          label: t.moderation.queue,
+          count: counts.total,
+        },
+        {
+          href: localePath(locale, 'moderation', 'products'),
+          label: t.moderation.products,
+          count: counts.PRODUCT ?? 0,
+        },
+        {
+          href: localePath(locale, 'moderation', 'documents'),
+          label: t.moderation.documents,
+          count: counts.DOCUMENT ?? 0,
+        },
+        {
+          href: localePath(locale, 'moderation', 'complaints'),
+          label: t.moderation.complaints,
+          count: counts.COMPLAINT ?? 0,
+        },
+        {
+          href: localePath(locale, 'moderation', 'reviews'),
+          label: t.moderation.reviews,
+          count: counts.REVIEW ?? 0,
+        },
+      ],
     },
   ]
 
@@ -74,7 +80,7 @@ export default async function ModerationLayout({
 
       <div className="mt-5 grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
         <AdminNav
-          items={items}
+          groups={groups}
           label={t.moderation.title}
           className="lg:sticky lg:top-4 lg:self-start"
         />

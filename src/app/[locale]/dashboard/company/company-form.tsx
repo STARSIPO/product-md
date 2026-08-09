@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useRef, useState, useTransition, type ReactNode } from 'react'
-import { ExternalLink, ImagePlus, Trash2 } from 'lucide-react'
+import { Building2, ExternalLink, ImagePlus, MapPin, Trash2 } from 'lucide-react'
 import {
   Alert,
   Button,
@@ -14,6 +14,7 @@ import {
   Textarea,
   useToast,
 } from '@/components/ui'
+import { CollapsibleSection } from '@/components/dashboard/collapsible-section'
 import { useI18n } from '@/lib/i18n/provider'
 import { LOCALES, LOCALE_LABELS } from '@/lib/i18n/config'
 import { companySchema } from '@/lib/validation'
@@ -31,13 +32,22 @@ import {
 /**
  * The company profile.
  *
- * Everything a buyer uses to decide whether to talk to this supplier lives on one
- * screen — there is no wizard here, because editing is a different task from creating
- * and a returning user wants to change one field, not walk seven steps.
+ * Forty-odd fields, grouped into five blocks a person can name: who you are, how to
+ * reach you, where you are and where you deliver, how you get paid, and what you look
+ * like. Every block is one open panel on a desktop and one foldable panel on a phone —
+ * scrolling past thirty inputs to correct a phone number is what made this screen the
+ * one people abandoned.
  *
- * The pieces exported alongside the form (day rows, checkbox groups, the value shape)
- * are the same ones the onboarding wizard renders, so "profile" means exactly the same
- * thing whether it is being created or corrected.
+ * Folding is CSS, not conditional rendering: every input stays mounted, so a collapsed
+ * section never silently drops the value it holds when the form is submitted.
+ *
+ * Beside the fields is the card a buyer will actually see, rendered live from the same
+ * state. Most of these fields only matter because of how they land there, and that is
+ * otherwise invisible until after saving and navigating away.
+ *
+ * The pieces exported alongside the form are the same ones the onboarding wizard
+ * renders, so "profile" means exactly the same thing whether it is being created or
+ * corrected.
  */
 
 export const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
@@ -160,6 +170,26 @@ export interface CompanyPhotoItem {
   url: string
 }
 
+/** Which block owns which field, so a rejected save can point at the right panel. */
+const FIELD_SECTIONS: Record<string, string> = {
+  legalName: 'basics',
+  displayName: 'basics',
+  idno: 'basics',
+  orgType: 'basics',
+  description: 'basics',
+  isBuyer: 'basics',
+  isSeller: 'basics',
+  phone: 'contacts',
+  email: 'contacts',
+  website: 'contacts',
+  contactPerson: 'contacts',
+  districtId: 'address',
+  localityId: 'address',
+  address: 'address',
+  deliveryTerms: 'address',
+  minOrderBani: 'payment',
+}
+
 export function CompanyForm({
   districts,
   localities,
@@ -197,6 +227,20 @@ export function CompanyForm({
         : [],
     [localities, values.districtId],
   )
+
+  const districtName = districts.find((district) => district.id === values.districtId)?.name ?? ''
+  const localityName =
+    localityOptions.find((locality) => locality.id === values.localityId)?.name ?? ''
+
+  /** Sections holding at least one rejected field, so they can be opened, not hunted for. */
+  const invalidSections = useMemo(() => {
+    const set = new Set<string>()
+    for (const field of Object.keys(errors)) {
+      const section = FIELD_SECTIONS[field]
+      if (section) set.add(section)
+    }
+    return set
+  }, [errors])
 
   function update<K extends keyof CompanyFormValues>(key: K, value: CompanyFormValues[K]) {
     setSaved(false)
@@ -274,13 +318,21 @@ export function CompanyForm({
         setFormError(resolveErrorMessage(t, result, fmt))
         return
       }
-      setPhotos((current) => [...current, ...result.data.map((photo) => ({ id: photo.id, url: photo.url }))])
+      setPhotos((current) => [
+        ...current,
+        ...result.data.map((photo) => ({ id: photo.id, url: photo.url })),
+      ])
       router.refresh()
     })
   }
 
+  const sectionLabels = {
+    expand: t.company.expandSection,
+    collapse: t.company.collapseSection,
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Announced, not just coloured: the result of a save has to reach a screen
           reader too. */}
       <div aria-live="polite">
@@ -288,21 +340,24 @@ export function CompanyForm({
         {saved && !formError ? <Alert variant="success">{t.company.profileSaved}</Alert> : null}
       </div>
 
-      {publicHref ? (
-        <p className="text-sm text-muted-foreground">
-          {t.company.publicProfileHint}{' '}
-          <Link
-            href={publicHref}
-            className="font-medium text-primary hover:text-primary-hover"
-          >
-            {t.company.publicProfile}
-            <ExternalLink className="ml-1 inline h-3.5 w-3.5" aria-hidden />
-          </Link>
-        </p>
-      ) : null}
+      <CompanyPreview
+        values={values}
+        logoUrl={logoUrl}
+        districtName={districtName}
+        localityName={localityName}
+        publicHref={publicHref}
+      />
 
-      {/* ------------------------------------------------------------ identity */}
-      <Section title={t.onboarding.companyTitle} description={t.onboarding.companySubtitle}>
+      {/* ------------------------------------------------------------- basics */}
+      <CollapsibleSection
+        title={t.company.sectionBasics}
+        description={t.company.sectionBasicsHint}
+        summary={values.displayName || values.legalName}
+        defaultOpen
+        forceOpen={invalidSections.has('basics')}
+        expandLabel={sectionLabels.expand}
+        collapseLabel={sectionLabels.collapse}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label={t.company.legalName}
@@ -404,10 +459,76 @@ export function CompanyForm({
             />
           </div>
         </fieldset>
-      </Section>
+      </CollapsibleSection>
 
-      {/* -------------------------------------------------------------- images */}
-      <Section title={t.company.logo}>
+      {/* ----------------------------------------------------------- contacts */}
+      <CollapsibleSection
+        title={t.company.sectionContacts}
+        description={t.company.sectionContactsHint}
+        summary={values.phone || values.email}
+        forceOpen={invalidSections.has('contacts')}
+        expandLabel={sectionLabels.expand}
+        collapseLabel={sectionLabels.collapse}
+      >
+        <ContactFields values={values} errors={errors} update={update} />
+      </CollapsibleSection>
+
+      {/* ---------------------------------------------- address & delivery */}
+      <CollapsibleSection
+        title={t.company.sectionAddress}
+        description={t.company.sectionAddressHint}
+        summary={[localityName, districtName].filter(Boolean).join(', ')}
+        forceOpen={invalidSections.has('address')}
+        expandLabel={sectionLabels.expand}
+        collapseLabel={sectionLabels.collapse}
+      >
+        <GeographyFields
+          districts={districts}
+          localityOptions={localityOptions}
+          values={values}
+          errors={errors}
+          onDistrictChange={(districtId) =>
+            setValues((current) => ({ ...current, districtId, localityId: '' }))
+          }
+          onLocalityChange={(localityId) => update('localityId', localityId)}
+          onAddressChange={(address) => update('address', address)}
+        />
+
+        <DeliveryTermsFields districts={districts} values={values} errors={errors} update={update} />
+
+        <fieldset className="min-w-0 border-0 p-0">
+          <legend className="mb-1 text-sm font-medium">{t.company.workingHours}</legend>
+          <p className="mb-2 text-caption text-muted-foreground">{t.company.workingHoursHint}</p>
+          <WorkingHoursEditor
+            value={values.workingHours}
+            onChange={(workingHours) => update('workingHours', workingHours)}
+          />
+        </fieldset>
+      </CollapsibleSection>
+
+      {/* ------------------------------------------------- payment & terms */}
+      <CollapsibleSection
+        title={t.company.sectionPayment}
+        description={t.company.sectionPaymentHint}
+        summary={values.paymentMethods
+          .map((method) => t.paymentMethods[method as keyof typeof t.paymentMethods])
+          .filter(Boolean)
+          .join(', ')}
+        forceOpen={invalidSections.has('payment')}
+        expandLabel={sectionLabels.expand}
+        collapseLabel={sectionLabels.collapse}
+      >
+        <PaymentFields values={values} errors={errors} update={update} />
+      </CollapsibleSection>
+
+      {/* -------------------------------------------------------------- media */}
+      <CollapsibleSection
+        title={t.company.sectionMedia}
+        description={t.company.sectionMediaHint}
+        summary={logoUrl ? t.company.logo : t.company.logoNone}
+        expandLabel={sectionLabels.expand}
+        collapseLabel={sectionLabels.collapse}
+      >
         <div className="flex flex-wrap items-center gap-4">
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -416,95 +537,111 @@ export function CompanyForm({
               alt=""
               width={80}
               height={80}
-              className="h-20 w-20 rounded-lg border border-border object-cover"
+              className="h-20 w-20 shrink-0 rounded-lg border border-border object-cover"
             />
           ) : (
-            <span className="grid h-20 w-20 place-items-center rounded-lg border border-dashed border-border bg-muted text-muted-foreground">
+            <span className="grid h-20 w-20 shrink-0 place-items-center rounded-lg border border-dashed border-border bg-muted text-muted-foreground">
               <ImagePlus className="h-5 w-5" aria-hidden />
             </span>
           )}
 
-          <div className="flex flex-wrap gap-2">
-            <input
-              ref={logoInput}
-              id="company-logo"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              onChange={(event) => {
-                pickLogo(event.target.files?.[0])
-                event.target.value = ''
-              }}
-            />
-            <Button
-              variant="outline"
-              loading={pending}
-              onClick={() => logoInput.current?.click()}
-            >
-              {t.company.logoUpload}
-            </Button>
-            {logoUrl ? (
-              <Button
-                variant="ghost"
-                loading={pending}
-                onClick={() =>
-                  startTransition(async () => {
-                    const result = await removeCompanyLogo()
-                    if (!result.ok) {
-                      setFormError(resolveErrorMessage(t, result, fmt))
-                      return
-                    }
-                    setLogoUrl(null)
-                    router.refresh()
-                  })
-                }
-              >
-                {t.company.logoRemove}
-              </Button>
-            ) : null}
+          <div className="min-w-0 flex-1">
+            {/* What is stored right now, said in words — an image that failed to load
+                otherwise looks exactly like no logo at all. */}
+            <p className="text-sm font-medium">{logoUrl ? t.company.logo : t.company.logoNone}</p>
+            <p className="mt-0.5 text-caption text-muted-foreground">
+              {fmt(t.company.logoHint, { size: Math.floor(MAX_IMAGE_BYTES / (1024 * 1024)) })}
+            </p>
           </div>
         </div>
-        <p className="text-caption text-muted-foreground">
-          {fmt(t.company.logoHint, { size: Math.floor(MAX_IMAGE_BYTES / (1024 * 1024)) })}
-        </p>
-      </Section>
 
-      <Section title={t.company.photos}>
-        {photos.length > 0 ? (
-          <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {photos.map((photo) => (
-              <li key={photo.id} className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photo.url}
-                  alt=""
-                  className="aspect-square w-full rounded-md border border-border object-cover"
-                />
-                <button
-                  type="button"
-                  aria-label={t.company.photoRemove}
-                  disabled={pending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      const result = await deleteCompanyPhoto(photo.id)
-                      if (!result.ok) {
-                        setFormError(resolveErrorMessage(t, result, fmt))
-                        return
-                      }
-                      setPhotos((current) => current.filter((item) => item.id !== photo.id))
-                      router.refresh()
-                    })
+        <input
+          ref={logoInput}
+          id="company-logo"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="sr-only"
+          onChange={(event) => {
+            pickLogo(event.target.files?.[0])
+            event.target.value = ''
+          }}
+        />
+
+        <div className="grid gap-2 sm:flex sm:flex-wrap">
+          <Button
+            variant="outline"
+            loading={pending}
+            fullWidth
+            className="sm:w-auto"
+            onClick={() => logoInput.current?.click()}
+          >
+            {t.company.logoUpload}
+          </Button>
+          {logoUrl ? (
+            <Button
+              variant="ghost"
+              loading={pending}
+              fullWidth
+              className="sm:w-auto"
+              onClick={() =>
+                startTransition(async () => {
+                  const result = await removeCompanyLogo()
+                  if (!result.ok) {
+                    setFormError(resolveErrorMessage(t, result, fmt))
+                    return
                   }
-                  className="absolute right-1 top-1 grid h-11 w-11 place-items-center rounded-md bg-card/90 text-muted-foreground shadow-card transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden />
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+                  setLogoUrl(null)
+                  router.refresh()
+                })
+              }
+            >
+              <Trash2 className="h-4 w-4" aria-hidden />
+              {t.company.logoRemove}
+            </Button>
+          ) : null}
+        </div>
 
-        <div>
+        <div className="border-t border-border pt-4">
+          <p className="text-sm font-medium">{t.company.photos}</p>
+          <p className="mt-0.5 text-caption text-muted-foreground">
+            {fmt(t.company.photosCount, { count: photos.length })} ·{' '}
+            {fmt(t.company.photosHint, { max: 12 })}
+          </p>
+
+          {photos.length > 0 ? (
+            <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {photos.map((photo) => (
+                <li key={photo.id} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photo.url}
+                    alt=""
+                    className="aspect-square w-full rounded-md border border-border object-cover"
+                  />
+                  <button
+                    type="button"
+                    aria-label={t.company.photoRemove}
+                    disabled={pending}
+                    onClick={() =>
+                      startTransition(async () => {
+                        const result = await deleteCompanyPhoto(photo.id)
+                        if (!result.ok) {
+                          setFormError(resolveErrorMessage(t, result, fmt))
+                          return
+                        }
+                        setPhotos((current) => current.filter((item) => item.id !== photo.id))
+                        router.refresh()
+                      })
+                    }
+                    className="absolute right-1 top-1 grid h-11 w-11 place-items-center rounded-md bg-card/90 text-muted-foreground shadow-card transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
           <input
             ref={photoInput}
             id="company-photos"
@@ -517,55 +654,121 @@ export function CompanyForm({
               event.target.value = ''
             }}
           />
-          <Button variant="outline" loading={pending} onClick={() => photoInput.current?.click()}>
+          <Button
+            variant="outline"
+            loading={pending}
+            fullWidth
+            className="mt-3 sm:w-auto"
+            onClick={() => photoInput.current?.click()}
+          >
             {t.company.photosUpload}
           </Button>
         </div>
-        <p className="text-caption text-muted-foreground">
-          {fmt(t.company.photosHint, { max: 12 })}
-        </p>
-      </Section>
+      </CollapsibleSection>
 
-      {/* ------------------------------------------------------------ contacts */}
-      <Section title={t.company.contactsTitle}>
-        <ContactFields values={values} errors={errors} update={update} />
-        <GeographyFields
-          districts={districts}
-          localityOptions={localityOptions}
-          values={values}
-          errors={errors}
-          onDistrictChange={(districtId) =>
-            setValues((current) => ({ ...current, districtId, localityId: '' }))
-          }
-          onLocalityChange={(localityId) => update('localityId', localityId)}
-          onAddressChange={(address) => update('address', address)}
-        />
-      </Section>
-
-      {/* -------------------------------------------------------- working hours */}
-      <Section title={t.company.workingHours} description={t.company.workingHoursHint}>
-        <WorkingHoursEditor
-          value={values.workingHours}
-          onChange={(workingHours) => update('workingHours', workingHours)}
-        />
-      </Section>
-
-      {/* ------------------------------------------------------------ delivery */}
-      <Section title={t.company.deliveryTerms}>
-        <DeliveryFields
-          districts={districts}
-          values={values}
-          errors={errors}
-          update={update}
-        />
-      </Section>
-
-      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-        <Button loading={pending} onClick={submit}>
+      {/* Sticky on a phone: the save button of a five-panel form is otherwise a scroll
+          away from whichever field was just edited. The offset is the same height
+          `.pb-safe-nav` reserves, so the bar floats above the fixed bottom navigation
+          instead of behind it. */}
+      <div className="sticky bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
+        <Button loading={pending} onClick={submit} size="lg" fullWidth className="sm:w-auto">
           {t.common.save}
         </Button>
       </div>
     </div>
+  )
+}
+
+// --- public preview ----------------------------------------------------------
+
+/**
+ * The card a buyer sees, drawn from the values currently in the form.
+ *
+ * Not a screenshot of the real page and not trying to be: it shows the four things that
+ * decide whether a buyer clicks — name, where you are, what you do, how to reach you —
+ * so that "displayName" and "description" stop being abstract database columns.
+ */
+function CompanyPreview({
+  values,
+  logoUrl,
+  districtName,
+  localityName,
+  publicHref,
+}: {
+  values: CompanyFormValues
+  logoUrl: string | null
+  districtName: string
+  localityName: string
+  publicHref: string | null
+}) {
+  const { t } = useI18n()
+
+  const location = [localityName, districtName].filter(Boolean).join(', ')
+  const orgType = t.orgTypes[values.orgType as keyof typeof t.orgTypes]
+
+  return (
+    <section
+      aria-labelledby="company-preview-title"
+      className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-5"
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h2 id="company-preview-title" className="text-h3">
+          {t.company.previewTitle}
+        </h2>
+        {publicHref ? (
+          <Link
+            href={publicHref}
+            className="inline-flex min-h-[24px] items-center text-sm font-medium text-primary hover:text-primary-hover"
+          >
+            {t.company.publicProfile}
+            <ExternalLink className="ml-1 h-3.5 w-3.5" aria-hidden />
+          </Link>
+        ) : null}
+      </div>
+
+      <div className="mt-3 flex gap-3 rounded-md border border-border bg-background p-3">
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={logoUrl}
+            alt=""
+            width={56}
+            height={56}
+            className="h-14 w-14 shrink-0 rounded-md border border-border object-cover"
+          />
+        ) : (
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md border border-dashed border-border text-muted-foreground">
+            <Building2 className="h-5 w-5" aria-hidden />
+          </span>
+        )}
+
+        <div className="min-w-0 flex-1">
+          <p className="clamp-1 text-sm font-semibold">
+            {values.displayName || values.legalName || (
+              <span className="font-normal text-muted-foreground">{t.company.previewNoName}</span>
+            )}
+          </p>
+
+          <p className="mt-0.5 flex items-center gap-1 text-caption text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span className="truncate">
+              {orgType ? `${orgType} · ` : ''}
+              {location || t.company.previewNoLocation}
+            </span>
+          </p>
+
+          <p className="clamp-2 mt-1.5 text-caption text-muted-foreground">
+            {values.description || t.company.previewNoDescription}
+          </p>
+
+          {values.phone || values.email ? (
+            <p className="clamp-1 mt-1.5 text-caption text-foreground">
+              {[values.phone, values.email].filter(Boolean).join(' · ')}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -709,7 +912,8 @@ export function GeographyFields({
   )
 }
 
-export function DeliveryFields({
+/** Where and how goods move: written terms, pickup, and the districts served. */
+export function DeliveryTermsFields({
   districts,
   values,
   errors,
@@ -738,32 +942,54 @@ export function DeliveryFields({
         />
       </Field>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label={t.company.minOrder}
-          htmlFor="company-min-order"
-          hint={t.company.minOrderHint}
-          error={errors['minOrderBani']}
-        >
-          <Input
-            id="company-min-order"
-            inputMode="decimal"
-            value={values.minOrder}
-            onChange={(event) => update('minOrder', event.target.value)}
-            placeholder="1000"
-            invalid={Boolean(errors['minOrderBani'])}
-          />
-        </Field>
+      <CheckboxField
+        id="company-pickup"
+        label={t.company.pickupAvailable}
+        checked={values.pickupAvailable}
+        onChange={(event) => update('pickupAvailable', event.target.checked)}
+      />
 
-        <div className="flex items-end">
-          <CheckboxField
-            id="company-pickup"
-            label={t.company.pickupAvailable}
-            checked={values.pickupAvailable}
-            onChange={(event) => update('pickupAvailable', event.target.checked)}
-          />
-        </div>
-      </div>
+      <CheckboxGroup
+        legend={t.company.deliveryZones}
+        name="delivery-zones"
+        options={districts.map((district) => ({ value: district.id, label: district.name }))}
+        selected={values.deliveryZones}
+        onChange={(next) => update('deliveryZones', next)}
+        columns={3}
+      />
+    </div>
+  )
+}
+
+/** What a deal costs to start and how it is settled. */
+export function PaymentFields({
+  values,
+  errors,
+  update,
+}: {
+  values: CompanyFormValues
+  errors: Record<string, string>
+  update: <K extends keyof CompanyFormValues>(key: K, value: CompanyFormValues[K]) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <div className="space-y-4">
+      <Field
+        label={t.company.minOrder}
+        htmlFor="company-min-order"
+        hint={t.company.minOrderHint}
+        error={errors['minOrderBani']}
+      >
+        <Input
+          id="company-min-order"
+          inputMode="decimal"
+          value={values.minOrder}
+          onChange={(event) => update('minOrder', event.target.value)}
+          placeholder="1000"
+          invalid={Boolean(errors['minOrderBani'])}
+        />
+      </Field>
 
       <CheckboxGroup
         legend={t.company.paymentMethods}
@@ -782,15 +1008,32 @@ export function DeliveryFields({
         onChange={(next) => update('languages', next)}
         columns={2}
       />
+    </div>
+  )
+}
 
-      <CheckboxGroup
-        legend={t.company.deliveryZones}
-        name="delivery-zones"
-        options={districts.map((district) => ({ value: district.id, label: district.name }))}
-        selected={values.deliveryZones}
-        onChange={(next) => update('deliveryZones', next)}
-        columns={3}
-      />
+/**
+ * Delivery and payment as one block.
+ *
+ * Kept as a single component because the onboarding wizard asks all of it on one step;
+ * the profile editor uses the two halves separately, under headings a returning user can
+ * navigate by.
+ */
+export function DeliveryFields({
+  districts,
+  values,
+  errors,
+  update,
+}: {
+  districts: readonly DistrictOption[]
+  values: CompanyFormValues
+  errors: Record<string, string>
+  update: <K extends keyof CompanyFormValues>(key: K, value: CompanyFormValues[K]) => void
+}) {
+  return (
+    <div className="space-y-4">
+      <DeliveryTermsFields districts={districts} values={values} errors={errors} update={update} />
+      <PaymentFields values={values} errors={errors} update={update} />
     </div>
   )
 }
@@ -822,9 +1065,9 @@ export function WorkingHoursEditor({
         return (
           <li
             key={day}
-            className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-border bg-card px-3 py-2"
+            className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-border bg-card px-3 py-2"
           >
-            <span className="w-28 shrink-0 text-sm font-medium">{t.company.days[day]}</span>
+            <span className="w-24 shrink-0 text-sm font-medium sm:w-28">{t.company.days[day]}</span>
 
             <CheckboxField
               id={`working-hours-${day}`}
@@ -837,14 +1080,14 @@ export function WorkingHoursEditor({
             />
 
             {hours ? (
-              <span className="ml-auto flex items-center gap-2">
+              <span className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
                 <label htmlFor={`hours-from-${day}`} className="sr-only">
                   {t.company.hoursFrom}
                 </label>
                 <Input
                   id={`hours-from-${day}`}
                   type="time"
-                  className="w-[7.5rem]"
+                  className="min-w-0 flex-1 sm:w-[7.5rem] sm:flex-initial"
                   value={hours.from}
                   onChange={(event) => setDay(day, { ...hours, from: event.target.value })}
                 />
@@ -857,7 +1100,7 @@ export function WorkingHoursEditor({
                 <Input
                   id={`hours-to-${day}`}
                   type="time"
-                  className="w-[7.5rem]"
+                  className="min-w-0 flex-1 sm:w-[7.5rem] sm:flex-initial"
                   value={hours.to}
                   onChange={(event) => setDay(day, { ...hours, to: event.target.value })}
                 />

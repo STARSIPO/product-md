@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import type { Prisma } from '@prisma/client'
 import { getDictionary, fmt, resolveLocale } from '@/lib/i18n'
 import { localePath } from '@/lib/i18n/config'
@@ -7,16 +8,25 @@ import { buildQuery, parsePage } from '@/lib/utils'
 import { USER_ROLES, USER_STATUSES } from '@/lib/constants'
 import { requireAdmin } from '@/server/auth/guards'
 import { db } from '@/server/db'
-import { DataTable, TableToolbar, type DataColumn } from '@/components/admin/data-table'
+import {
+  DataTable,
+  ExportLink,
+  TableToolbar,
+  type DataColumn,
+} from '@/components/admin/data-table'
 import { UserActions } from '@/components/admin/decision-dialog'
 import { Input, Pagination, Select, StatusBadge } from '@/components/ui'
 
 /**
  * User administration.
  *
- * Role and block state are the two levers here, and both are audited. The acting admin's
- * own row is intentionally inert: demoting or blocking yourself is never a legitimate
- * operation and is the fastest way to lock everyone out of this screen.
+ * Role and block state are the two levers on this list, and both are audited. The acting
+ * admin's own row is intentionally inert: demoting or blocking yourself is never a
+ * legitimate operation and is the fastest way to lock everyone out of this screen.
+ *
+ * Everything heavier — a forced password reset, ending every session, confirming a
+ * contact by hand, reading the login history — lives on the individual card, because
+ * those are decisions taken about *one* person after looking at them, not bulk levers.
  */
 
 export const dynamic = 'force-dynamic'
@@ -103,7 +113,12 @@ export default async function AdminUsersPage({
       primary: true,
       cell: (row) => (
         <div className="min-w-0">
-          <span className="font-medium">{row.name}</span>
+          <Link
+            href={localePath(locale, 'admin', 'users', row.id)}
+            className="rounded font-medium text-primary hover:text-primary-hover"
+          >
+            {row.name}
+          </Link>
           <p className="text-caption text-muted-foreground">
             {[row.email, row.phone, row.companies[0]?.company.displayName]
               .filter(Boolean)
@@ -201,9 +216,21 @@ export default async function AdminUsersPage({
       </TableToolbar>
 
       <div>
-        <p className="mb-3 tnum text-sm text-muted-foreground">
-          {fmt(t.admin.totalRows, { count: total })}
-        </p>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <p className="tnum text-sm text-muted-foreground">
+            {fmt(t.admin.totalRows, { count: total })}
+          </p>
+          <ExportLink
+            className="ml-auto"
+            href={`${localePath(locale, 'admin', 'export')}${buildQuery({
+              entity: 'users',
+              q,
+              role,
+              status,
+            })}`}
+            label={t.admin.exportCsv}
+          />
+        </div>
 
         <DataTable
           rows={rows}

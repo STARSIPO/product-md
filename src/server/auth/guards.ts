@@ -81,13 +81,24 @@ export async function requireModerator(locale: Locale): Promise<SessionUser> {
 /**
  * Admin pages additionally require an active TOTP enrolment. An admin without 2FA is
  * sent to set it up rather than silently granted access.
+ *
+ * The requirement is behind REQUIRE_ADMIN_2FA so the owner can run a demo without
+ * enrolling an authenticator. Turning it off is a visible, audited action in the admin
+ * panel — not something a deploy can do by accident.
  */
 export async function requireAdmin(locale: Locale): Promise<SessionUser> {
   const user = await requireUser(locale)
   if (user.role !== 'ADMIN') notFound()
+
   if (!user.twoFactorEnabled) {
-    redirect(`${localePath(locale, 'settings')}?setup2fa=1`)
+    const { isEnabled } = await import('@/server/services/feature-flags')
+    if (await isEnabled('REQUIRE_ADMIN_2FA')) {
+      // Enrolment lives under the dashboard shell — `/[locale]/settings` is not a route,
+      // so sending an admin there 404s them out of the panel instead of onto the form.
+      redirect(`${localePath(locale, 'dashboard', 'settings')}?setup2fa=1`)
+    }
   }
+
   return user
 }
 

@@ -2,10 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { env } from '@/env'
+import { localePath, type Locale } from '@/lib/i18n/config'
 import { assertAdmin } from '@/server/auth/guards'
+import { issueLinkToken } from '@/server/auth/tokens'
 import { db, transaction, type Tx } from '@/server/db'
 import { generateToken } from '@/server/crypto'
 import { appendEntry } from '@/server/services/ledger'
+import { resumeListingsAfterTopUp } from '@/server/services/billing'
 import { setFlag } from '@/server/services/feature-flags'
 import {
   invalidateCategoryIndex,
@@ -24,6 +28,7 @@ import {
   REQUEST_STATUSES,
   UNITS,
   USER_ROLES,
+  VERIFICATION_TYPES,
   type FeatureFlagKey,
 } from '@/lib/constants'
 import { DomainError, ok, parseInput, runAction, type ActionResult } from './result'
@@ -63,6 +68,35 @@ const slugSchema = z
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'url')
 
 const shortText = (max: number) => z.string().trim().min(1, 'required').max(max, 'maxLength')
+
+/**
+ * A number typed into a form arrives as a string; `z.coerce.number()` alone would type
+ * the action's input as `number` and force every caller to convert first, which is how a
+ * NaN reaches the schema instead of a validation message.
+ */
+const boundedInt = (min: number, max: number) =>
+  z
+    .union([z.string(), z.number()])
+    .transform((value) => (typeof value === 'number' ? value : value.trim()))
+    .pipe(z.coerce.number().int().min(min, 'min').max(max, 'max'))
+
+/**
+ * `<input type="date">` gives YYYY-MM-DD. An expiry is inclusive, so it lands at the end
+ * of the chosen day rather than at midnight — a badge valid "до 31 декабря" that stops
+ * working on the morning of the 31st is a support ticket.
+ */
+const optionalFutureDay = z
+  .union([z.string(), z.undefined(), z.null()])
+  .transform((value) => (typeof value === 'string' ? value.trim() : ''))
+  .transform((value, ctx) => {
+    if (value === '') return undefined
+    const date = new Date(`${value}T23:59:59`)
+    if (Number.isNaN(date.getTime()) || date.getTime() <= Date.now()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'dateFuture' })
+      return z.NEVER
+    }
+    return date
+  })
 
 function revalidateAdmin(...segments: string[]): void {
   revalidatePath('/[locale]/admin', 'page')
@@ -173,6 +207,157 @@ export async function setUserBlockedAction(input: UserBlockInput): Promise<Actio
     })
 
     revalidateAdmin('users')
+    return ok()
+  })
+}
+
+/**
+ * Ends every session the user has open.
+ *
+ * Blocking already does this; this is the milder tool for "their laptop was stolen" or
+ * "they left the company but keep the account". Refused on the acting admin's own row:
+ * it would work, and the operator would be signed out mid-task wondering what broke.
+ */
+const revokeSessionsSchema = z.object({
+  userId: idSchema,
+  reason: reasonSchema,
+})
+
+export type RevokeSessionsInput = z.input<typeof revokeSessionsSchema>
+
+export async function revokeUserSessionsAction(
+  input: RevokeSessionsInput,
+): Promise<ActionResult<number>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const parsed = parseInput(revokeSessionsSchema, input)
+
+    if (parsed.userId === actor.id) throw new DomainError('forbidden')
+
+    const user = await db.user.findUnique({ where: { id: parsed.userId }, select: { id: true } })
+    if (!user) throw new DomainError('notFound')
+
+    const result = await db.session.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    })
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.user.sessions.revoke',
+      entityType: 'USER',
+      entityId: user.id,
+      newValue: { revokedSessions: result.count },
+      reason: parsed.reason,
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('users', 'users/[id]')
+    return ok(result.count)
+  })
+}
+
+/**
+ * Forced password reset.
+ *
+ * The admin never sees or sets a password: `issueLinkToken` mints a single-use link,
+ * invalidating any previous one, and the operator hands it over out of band. The token
+ * is returned to the caller exactly once and is deliberately *not* written into the
+ * audit row — the log records that a reset was issued, never the credential itself.
+ */
+export async function resetUserPasswordAction(
+  userId: string,
+): Promise<ActionResult<{ url: string }>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const id = parseInput(idSchema, userId)
+
+    const user = await db.user.findUnique({
+      where: { id },
+      select: { id: true, email: true, locale: true },
+    })
+    if (!user) throw new DomainError('notFound')
+
+    // A phone-only account has nothing to key the token on; it recovers through the OTP
+    // flow instead.
+    if (!user.email) throw new DomainError('conflict')
+
+    const token = await issueLinkToken('PASSWORD_RESET', user.email, user.id)
+    const locale: Locale = user.locale === 'ro' ? 'ro' : 'ru'
+    const url = `${env.APP_URL}${localePath(locale, 'login')}/reset?token=${token}`
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.user.password.reset',
+      entityType: 'USER',
+      entityId: user.id,
+      newValue: { channel: 'EMAIL', target: user.email },
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('users', 'users/[id]')
+    return ok({ url })
+  })
+}
+
+const verifyContactSchema = z.object({
+  userId: idSchema,
+  channel: z.enum(['EMAIL', 'PHONE']),
+})
+
+export type VerifyContactInput = z.input<typeof verifyContactSchema>
+
+/**
+ * Manual contact confirmation — for the supplier who cannot receive our mail, or the
+ * number that never gets the SMS. It only marks the contact as verified; it never
+ * changes the address itself, so this cannot be used to move an account.
+ */
+export async function verifyUserContactAction(
+  input: VerifyContactInput,
+): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const parsed = parseInput(verifyContactSchema, input)
+
+    const user = await db.user.findUnique({
+      where: { id: parsed.userId },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        emailVerifiedAt: true,
+        phoneVerifiedAt: true,
+      },
+    })
+    if (!user) throw new DomainError('notFound')
+
+    const isEmail = parsed.channel === 'EMAIL'
+    if (isEmail ? !user.email : !user.phone) throw new DomainError('conflict')
+
+    const now = new Date()
+    await db.user.update({
+      where: { id: user.id },
+      data: isEmail ? { emailVerifiedAt: now } : { phoneVerifiedAt: now },
+    })
+
+    const changes = diff(
+      isEmail
+        ? { emailVerifiedAt: user.emailVerifiedAt }
+        : { phoneVerifiedAt: user.phoneVerifiedAt },
+      isEmail ? { emailVerifiedAt: now } : { phoneVerifiedAt: now },
+    )
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.user.contact.verify',
+      entityType: 'USER',
+      entityId: user.id,
+      oldValue: changes.before,
+      newValue: changes.after,
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('users', 'users/[id]')
     return ok()
   })
 }
@@ -302,6 +487,134 @@ export async function adjustCompanyBalanceAction(
   })
 }
 
+const badgeSchema = z
+  .object({
+    companyId: idSchema,
+    type: z.enum(VERIFICATION_TYPES),
+    granted: flag,
+    expiresAt: optionalFutureDay,
+    note: optionalReasonSchema,
+  })
+  // Taking a badge away downgrades a company in front of every buyer who filters on it,
+  // so it has to be justified in writing. Granting one does not.
+  .refine((data) => data.granted || (data.note ?? '').length > 0, {
+    message: 'required',
+    path: ['note'],
+  })
+
+export type BadgeInput = z.input<typeof badgeSchema>
+
+/**
+ * Grants or revokes a verification badge by hand.
+ *
+ * Most badges are produced by the document queue, but not all verification happens on
+ * the platform: an operator who has just phoned ANSA, or met the owner and seen the
+ * papers, needs to be able to say so. TRUSTED_SUPPLIER is only ever granted this way —
+ * there is no automatic path to it, by design.
+ *
+ * The row is keyed on (companyId, type), so re-granting updates rather than duplicating.
+ */
+export async function setCompanyBadgeAction(input: BadgeInput): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const parsed = parseInput(badgeSchema, input)
+
+    const company = await db.company.findUnique({
+      where: { id: parsed.companyId },
+      select: { id: true },
+    })
+    if (!company) throw new DomainError('notFound')
+
+    const existing = await db.verificationBadge.findUnique({
+      where: { companyId_type: { companyId: company.id, type: parsed.type } },
+      select: { status: true, expiresAt: true, note: true },
+    })
+
+    const next = {
+      status: parsed.granted ? 'APPROVED' : 'REJECTED',
+      grantedAt: parsed.granted ? new Date() : null,
+      expiresAt: parsed.granted ? (parsed.expiresAt ?? null) : null,
+      note: parsed.note ?? null,
+    }
+
+    await db.verificationBadge.upsert({
+      where: { companyId_type: { companyId: company.id, type: parsed.type } },
+      create: { companyId: company.id, type: parsed.type, ...next },
+      update: next,
+    })
+
+    const changes = diff(
+      {
+        status: existing?.status ?? null,
+        expiresAt: existing?.expiresAt ?? null,
+        note: existing?.note ?? null,
+      },
+      { status: next.status, expiresAt: next.expiresAt, note: next.note },
+    )
+
+    await recordAudit({
+      actorId: actor.id,
+      action: parsed.granted ? 'admin.company.badge.grant' : 'admin.company.badge.revoke',
+      entityType: 'COMPANY',
+      entityId: company.id,
+      oldValue: { type: parsed.type, ...changes.before },
+      newValue: { type: parsed.type, ...changes.after },
+      reason: parsed.note ?? null,
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('companies', 'companies/[id]', 'verification')
+    revalidatePath('/[locale]/suppliers/[slug]', 'page')
+    return ok()
+  })
+}
+
+const trialSchema = z.object({
+  companyId: idSchema,
+  days: boundedInt(1, 365),
+})
+
+export type TrialInput = z.input<typeof trialSchema>
+
+/**
+ * Extends the free-listing window.
+ *
+ * Counted from whichever is later — today or the current end date — so extending a live
+ * trial adds days instead of silently shortening it, and extending an expired one starts
+ * a fresh window rather than landing in the past.
+ */
+export async function extendCompanyTrialAction(input: TrialInput): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const parsed = parseInput(trialSchema, input)
+
+    const company = await db.company.findUnique({
+      where: { id: parsed.companyId },
+      select: { id: true, trialEndsAt: true },
+    })
+    if (!company) throw new DomainError('notFound')
+
+    const now = Date.now()
+    const base = Math.max(now, company.trialEndsAt?.getTime() ?? now)
+    const trialEndsAt = new Date(base + parsed.days * 24 * 60 * 60 * 1000)
+
+    await db.company.update({ where: { id: company.id }, data: { trialEndsAt } })
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.company.trial.extend',
+      entityType: 'COMPANY',
+      entityId: company.id,
+      oldValue: { trialEndsAt: company.trialEndsAt },
+      newValue: { trialEndsAt, days: parsed.days },
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('companies', 'companies/[id]')
+    return ok()
+  })
+}
+
 // --- content status overrides ------------------------------------------------
 
 const productStatusSchema = z.object({
@@ -352,6 +665,170 @@ export async function setProductStatusAdminAction(
   })
 }
 
+const productFlagSchema = z.object({
+  productId: idSchema,
+  value: flag,
+})
+
+export type ProductFlagInput = z.input<typeof productFlagSchema>
+
+/**
+ * Editorial bump — moves a listing to the top of the "newest" ordering without charging
+ * anybody. Used to give a good supplier a hand on a slow day, or to re-surface a listing
+ * that was stuck in moderation for a week through no fault of its own.
+ */
+export async function bumpProductAction(productId: string): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const id = parseInput(idSchema, productId)
+
+    const product = await db.product.findUnique({
+      where: { id },
+      select: { id: true, bumpedAt: true },
+    })
+    if (!product) throw new DomainError('notFound')
+
+    const bumpedAt = new Date()
+    await db.product.update({ where: { id: product.id }, data: { bumpedAt } })
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.product.bump',
+      entityType: 'PRODUCT',
+      entityId: product.id,
+      oldValue: { bumpedAt: product.bumpedAt },
+      newValue: { bumpedAt },
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('products')
+    revalidatePath('/[locale]/products', 'page')
+    return ok()
+  })
+}
+
+/** Pins or unpins a listing on the home page rail. */
+export async function setProductPinnedAction(
+  input: ProductFlagInput,
+): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const parsed = parseInput(productFlagSchema, input)
+
+    const product = await db.product.findUnique({
+      where: { id: parsed.productId },
+      select: { id: true, isHomepagePinned: true },
+    })
+    if (!product) throw new DomainError('notFound')
+
+    await db.product.update({
+      where: { id: product.id },
+      data: { isHomepagePinned: parsed.value },
+    })
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.product.pin',
+      entityType: 'PRODUCT',
+      entityId: product.id,
+      oldValue: { isHomepagePinned: product.isHomepagePinned },
+      newValue: { isHomepagePinned: parsed.value },
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('products')
+    revalidatePath('/[locale]', 'page')
+    return ok()
+  })
+}
+
+/**
+ * Clears the "paused because the balance ran out" marker.
+ *
+ * The nightly job sets it and a top-up clears it; this is the manual escape hatch for
+ * the case where the money arrived by bank transfer, or the charge was our mistake. It
+ * only clears the flag — the status is a separate, deliberate decision.
+ */
+export async function clearPausedForBalanceAction(
+  productId: string,
+): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const id = parseInput(idSchema, productId)
+
+    const product = await db.product.findUnique({
+      where: { id },
+      select: { id: true, pausedForBalance: true },
+    })
+    if (!product) throw new DomainError('notFound')
+    if (!product.pausedForBalance) throw new DomainError('conflict')
+
+    await db.product.update({ where: { id: product.id }, data: { pausedForBalance: false } })
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.product.unpause',
+      entityType: 'PRODUCT',
+      entityId: product.id,
+      oldValue: { pausedForBalance: true },
+      newValue: { pausedForBalance: false },
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('products')
+    return ok()
+  })
+}
+
+const unpublishSchema = z.object({
+  productId: idSchema,
+  reason: reasonSchema,
+})
+
+export type UnpublishInput = z.input<typeof unpublishSchema>
+
+/**
+ * Pulls a listing off the catalogue immediately, with a written reason.
+ *
+ * Distinct from the generic status override because the reason is mandatory here: this
+ * is the button pressed when something has to come down *now*, and the seller is owed an
+ * explanation they can read in `moderatorComment`.
+ */
+export async function unpublishProductAction(
+  input: UnpublishInput,
+): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const parsed = parseInput(unpublishSchema, input)
+
+    const product = await db.product.findUnique({
+      where: { id: parsed.productId },
+      select: { id: true, status: true, moderatorComment: true },
+    })
+    if (!product) throw new DomainError('notFound')
+
+    await db.product.update({
+      where: { id: product.id },
+      data: { status: 'PAUSED', moderatorComment: parsed.reason },
+    })
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.product.unpublish',
+      entityType: 'PRODUCT',
+      entityId: product.id,
+      oldValue: { status: product.status },
+      newValue: { status: 'PAUSED' },
+      reason: parsed.reason,
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('products')
+    revalidatePath('/[locale]/products/[slug]', 'page')
+    return ok()
+  })
+}
+
 const requestStatusSchema = z.object({
   requestId: idSchema,
   status: z.enum(REQUEST_STATUSES),
@@ -390,6 +867,50 @@ export async function setRequestStatusAdminAction(
     })
 
     revalidateAdmin('requests')
+    return ok()
+  })
+}
+
+const requestCancelSchema = z.object({
+  requestId: idSchema,
+  reason: reasonSchema,
+})
+
+export type RequestCancelInput = z.input<typeof requestCancelSchema>
+
+/** Cancels a purchase request. Suppliers who bid on it deserve a stated reason. */
+export async function cancelRequestAction(
+  input: RequestCancelInput,
+): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const parsed = parseInput(requestCancelSchema, input)
+
+    const request = await db.purchaseRequest.findUnique({
+      where: { id: parsed.requestId },
+      select: { id: true, status: true },
+    })
+    if (!request) throw new DomainError('notFound')
+    if (request.status === 'CANCELLED') throw new DomainError('conflict')
+
+    await db.purchaseRequest.update({
+      where: { id: request.id },
+      data: { status: 'CANCELLED' },
+    })
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.request.cancel',
+      entityType: 'REQUEST',
+      entityId: request.id,
+      oldValue: { status: request.status },
+      newValue: { status: 'CANCELLED' },
+      reason: parsed.reason,
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('requests')
+    revalidatePath('/[locale]/requests/[slug]', 'page')
     return ok()
   })
 }
@@ -456,6 +977,132 @@ export async function setDealStatusAdminAction(
     })
 
     revalidateAdmin('deals')
+    return ok()
+  })
+}
+
+/** Closing a dispute has to land somewhere; these are the only sane destinations. */
+const DISPUTE_EXITS = ['CONFIRMED', 'COMPLETED', 'CANCELLED'] as const
+
+const dealDisputeSchema = z.object({
+  dealId: idSchema,
+  open: flag,
+  status: z.enum(DISPUTE_EXITS).default('CONFIRMED'),
+  reason: reasonSchema,
+})
+
+export type DealDisputeInput = z.input<typeof dealDisputeSchema>
+
+/**
+ * Opens or closes a dispute on a deal.
+ *
+ * Product.md is not a party to the agreement and holds none of the money, so "resolving"
+ * a dispute means recording what the operator decided and putting the deal back into a
+ * state both sides can act on. The verdict is written to the deal timeline the traders
+ * read, not only to the audit log they cannot see.
+ */
+export async function setDealDisputeAction(
+  input: DealDisputeInput,
+): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const parsed = parseInput(dealDisputeSchema, input)
+
+    const deal = await db.deal.findUnique({
+      where: { id: parsed.dealId },
+      select: { id: true, status: true },
+    })
+    if (!deal) throw new DomainError('notFound')
+
+    const isOpen = deal.status === 'DISPUTED'
+    if (parsed.open === isOpen) throw new DomainError('conflict')
+
+    const status = parsed.open ? 'DISPUTED' : parsed.status
+
+    await transaction(async (tx) => {
+      await tx.deal.update({
+        where: { id: deal.id },
+        data: {
+          status,
+          ...(status === 'COMPLETED' ? { completedAt: new Date() } : {}),
+          ...(status === 'CANCELLED'
+            ? { cancelledAt: new Date(), cancelReason: parsed.reason }
+            : {}),
+        },
+      })
+
+      await tx.dealEvent.create({
+        data: {
+          dealId: deal.id,
+          actorId: actor.id,
+          fromStatus: deal.status,
+          toStatus: status,
+          comment: parsed.reason,
+        },
+      })
+    })
+
+    await recordAudit({
+      actorId: actor.id,
+      action: parsed.open ? 'admin.deal.dispute.open' : 'admin.deal.dispute.close',
+      entityType: 'DEAL',
+      entityId: deal.id,
+      oldValue: { status: deal.status },
+      newValue: { status },
+      reason: parsed.reason,
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('deals')
+    revalidatePath('/[locale]/deals/[id]', 'page')
+    return ok()
+  })
+}
+
+// --- reviews -----------------------------------------------------------------
+
+const deleteReplySchema = z.object({
+  reviewId: idSchema,
+  reason: reasonSchema,
+})
+
+export type DeleteReplyInput = z.input<typeof deleteReplySchema>
+
+/**
+ * Removes a company's public reply to a review.
+ *
+ * Hiding the review itself is a moderator decision and lives in moderation.ts. This is
+ * the narrower case: the review stands, but the answer to it broke the rules. The reply
+ * has no "hidden" state in the schema, so the row is deleted — which is why the old text
+ * is copied into the audit row first and a reason is mandatory.
+ */
+export async function deleteReviewReplyAction(
+  input: DeleteReplyInput,
+): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const parsed = parseInput(deleteReplySchema, input)
+
+    const reply = await db.reviewReply.findUnique({
+      where: { reviewId: parsed.reviewId },
+      select: { id: true, body: true, review: { select: { targetCompanyId: true } } },
+    })
+    if (!reply) throw new DomainError('notFound')
+
+    await db.reviewReply.delete({ where: { id: reply.id } })
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.review.reply.delete',
+      entityType: 'REVIEW',
+      entityId: parsed.reviewId,
+      oldValue: { body: reply.body },
+      reason: parsed.reason,
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('reviews')
+    revalidatePath('/[locale]/suppliers/[slug]', 'page')
     return ok()
   })
 }
@@ -954,6 +1601,99 @@ export async function deleteSynonymAction(synonymId: string): Promise<ActionResu
   })
 }
 
+const bulkSynonymSchema = z.object({
+  categoryId: idSchema,
+  locale: localeSchema,
+  terms: z.string().trim().min(1, 'required').max(4000, 'maxLength'),
+  weight: boundedInt(1, 200).default(100),
+  isMisspelling: flag,
+})
+
+export type BulkSynonymInput = z.input<typeof bulkSynonymSchema>
+
+/**
+ * Adds a whole vocabulary at once — one term per line.
+ *
+ * Teaching the matcher a new category is never one word: «картошка», «картофан», the
+ * misspelling «картофиль» and the Romanian "cartofi" all arrive together, and typing
+ * them one row at a time is how the taxonomy stops being maintained. Terms already known
+ * for this category and locale are skipped rather than duplicated, so the box can be
+ * pasted into twice without consequence.
+ */
+export async function bulkAddSynonymsAction(
+  input: BulkSynonymInput,
+): Promise<ActionResult<number>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const parsed = parseInput(bulkSynonymSchema, input)
+
+    const category = await db.category.findUnique({
+      where: { id: parsed.categoryId },
+      select: { id: true },
+    })
+    if (!category) throw new DomainError('notFound')
+
+    const seen = new Set<string>()
+    const candidates: { term: string; normalized: string }[] = []
+
+    for (const line of parsed.terms.split('\n')) {
+      const term = line.trim().slice(0, 80)
+      if (term === '') continue
+      const normalized = normalize(term)
+      if (normalized === '' || seen.has(normalized)) continue
+      seen.add(normalized)
+      candidates.push({ term, normalized })
+    }
+
+    if (candidates.length === 0) throw new DomainError('validation')
+
+    const existing = await db.categorySynonym.findMany({
+      where: {
+        categoryId: category.id,
+        locale: parsed.locale,
+        normalized: { in: candidates.map((item) => item.normalized) },
+      },
+      select: { normalized: true },
+    })
+    const known = new Set(existing.map((row) => row.normalized))
+    const fresh = candidates.filter((item) => !known.has(item.normalized))
+
+    await transaction(async (tx) => {
+      for (const item of fresh) {
+        await tx.categorySynonym.create({
+          data: {
+            categoryId: category.id,
+            locale: parsed.locale,
+            term: item.term,
+            normalized: item.normalized,
+            weight: parsed.weight,
+            isMisspelling: parsed.isMisspelling,
+          },
+        })
+      }
+    })
+
+    invalidateCategoryIndex()
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.synonym.bulkCreate',
+      entityType: 'CATEGORY',
+      entityId: category.id,
+      newValue: {
+        locale: parsed.locale,
+        added: fresh.length,
+        skipped: candidates.length - fresh.length,
+        terms: fresh.map((item) => item.term).slice(0, 50),
+      },
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('synonyms')
+    return ok(fresh.length)
+  })
+}
+
 export interface SuggestionPreview {
   categoryId: string
   name: string
@@ -1071,6 +1811,186 @@ export async function setFeatureFlagAction(input: FeatureFlagInput): Promise<Act
     revalidateAdmin('flags')
     // Prices and "free right now" notices are rendered all over the public site.
     revalidatePath('/[locale]', 'layout')
+    return ok()
+  })
+}
+
+// --- payments ----------------------------------------------------------------
+
+/**
+ * The canonical callback shape. Every driver's `verifyWebhook` normalizes to this, and
+ * the raw body is stored before processing, so a stored payload that already speaks it
+ * can be replayed here. A bank format that does not is refused rather than guessed at —
+ * see the note in reprocessWebhookAction.
+ */
+const webhookPayloadSchema = z.object({
+  paymentId: z.string().min(1).nullish(),
+  status: z.enum(['SUCCEEDED', 'FAILED', 'PENDING', 'REFUNDED']).optional(),
+  amountBani: z.number().int().nullish(),
+})
+
+/**
+ * Re-runs a webhook whose handler died half way.
+ *
+ * The event row is written before any processing precisely so this is possible: the
+ * provider considers the callback delivered, the money left the buyer's card, and the
+ * balance never moved. Re-crediting is safe because `appendEntry` is keyed on
+ * `topup:<paymentId>` — pressing the button twice writes one ledger entry.
+ *
+ * Two refusals worth stating out loud:
+ *   - an event whose signature did not verify is never acted on, no matter how stuck
+ *     the payment looks; that check is the only thing standing between a forged POST
+ *     and a credited balance
+ *   - a payload this deployment's driver does not express in the canonical shape is
+ *     reported as a conflict instead of being parsed hopefully. Adding a real bank
+ *     driver means teaching it to normalize here too.
+ */
+export async function reprocessWebhookAction(eventId: string): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const id = parseInput(idSchema, eventId)
+
+    const event = await db.webhookEvent.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        provider: true,
+        payload: true,
+        signatureValid: true,
+        processedAt: true,
+        error: true,
+      },
+    })
+    if (!event) throw new DomainError('notFound')
+    if (!event.signatureValid) throw new DomainError('forbidden')
+
+    let decoded: unknown
+    try {
+      decoded = JSON.parse(event.payload)
+    } catch {
+      throw new DomainError('conflict')
+    }
+
+    const parsed = webhookPayloadSchema.safeParse(decoded)
+    if (!parsed.success || !parsed.data.paymentId) throw new DomainError('conflict')
+
+    const payment = await db.payment.findUnique({
+      where: { id: parsed.data.paymentId },
+      select: { id: true, companyId: true, amountBani: true, status: true },
+    })
+    if (!payment) throw new DomainError('notFound')
+
+    const reported = parsed.data.status ?? 'SUCCEEDED'
+    let outcome: string
+
+    if (payment.status === 'SUCCEEDED') {
+      outcome = 'alreadyCredited'
+    } else if (reported !== 'SUCCEEDED') {
+      await db.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: reported === 'REFUNDED' ? 'REFUNDED' : reported === 'PENDING' ? 'PENDING' : 'FAILED',
+        },
+      })
+      outcome = reported
+    } else if (
+      parsed.data.amountBani !== null &&
+      parsed.data.amountBani !== undefined &&
+      parsed.data.amountBani !== payment.amountBani
+    ) {
+      // The amount the provider reports must match ours exactly; reconciling the
+      // difference silently is how a balance ends up wrong by a hundred bani forever.
+      await db.payment.update({
+        where: { id: payment.id },
+        data: { status: 'FAILED', failureCode: 'amount_mismatch' },
+      })
+      outcome = 'amountMismatch'
+    } else {
+      const entry = await appendEntry({
+        companyId: payment.companyId,
+        amountBani: payment.amountBani,
+        type: 'TOP_UP',
+        idempotencyKey: `topup:${payment.id}`,
+        description: 'payment',
+        entityType: 'PAYMENT',
+        entityId: payment.id,
+      })
+
+      await db.payment.update({
+        where: { id: payment.id },
+        data: { status: 'SUCCEEDED', completedAt: new Date() },
+      })
+
+      // A seller who has paid should not have to re-publish by hand.
+      await resumeListingsAfterTopUp(payment.companyId)
+      outcome = entry.deduplicated ? 'alreadyCredited' : 'credited'
+    }
+
+    await db.webhookEvent.update({
+      where: { id: event.id },
+      data: { processedAt: new Date(), error: null },
+    })
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.payment.webhook.reprocess',
+      entityType: 'PAYMENT',
+      entityId: payment.id,
+      oldValue: { status: payment.status, webhookError: event.error },
+      newValue: { outcome, webhookEventId: event.id },
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('payments', 'balances')
+    return ok()
+  })
+}
+
+const paymentFailSchema = z.object({
+  paymentId: idSchema,
+  reason: reasonSchema,
+})
+
+export type PaymentFailInput = z.input<typeof paymentFailSchema>
+
+/**
+ * Closes out a payment that will never arrive.
+ *
+ * Purely bookkeeping: it moves the row out of PENDING so the queue on the overview page
+ * stops pointing at it, and touches no balance. A payment that already succeeded is
+ * refused — undoing a credit is a refund through the ledger, not a status edit.
+ */
+export async function markPaymentFailedAction(
+  input: PaymentFailInput,
+): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const actor = await assertAdmin()
+    const parsed = parseInput(paymentFailSchema, input)
+
+    const payment = await db.payment.findUnique({
+      where: { id: parsed.paymentId },
+      select: { id: true, status: true, failureCode: true },
+    })
+    if (!payment) throw new DomainError('notFound')
+    if (payment.status === 'SUCCEEDED') throw new DomainError('conflict')
+
+    await db.payment.update({
+      where: { id: payment.id },
+      data: { status: 'FAILED', failureCode: 'admin_manual', completedAt: new Date() },
+    })
+
+    await recordAudit({
+      actorId: actor.id,
+      action: 'admin.payment.fail',
+      entityType: 'PAYMENT',
+      entityId: payment.id,
+      oldValue: { status: payment.status, failureCode: payment.failureCode },
+      newValue: { status: 'FAILED', failureCode: 'admin_manual' },
+      reason: parsed.reason,
+      ip: requestIp(),
+    })
+
+    revalidateAdmin('payments')
     return ok()
   })
 }

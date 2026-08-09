@@ -6,7 +6,12 @@ import { buildQuery, parsePage } from '@/lib/utils'
 import { encodeJson } from '@/lib/json'
 import { requireAdmin } from '@/server/auth/guards'
 import { listAudit, listAuditActors, type AuditRow } from '@/server/services/audit'
-import { DataTable, TableToolbar, type DataColumn } from '@/components/admin/data-table'
+import {
+  DataTable,
+  ExportLink,
+  TableToolbar,
+  type DataColumn,
+} from '@/components/admin/data-table'
 import { Input, Pagination, Select } from '@/components/ui'
 
 /**
@@ -40,6 +45,8 @@ const ENTITY_TYPES = [
   'CATEGORY_SYNONYM',
   'TARIFF',
   'FEATURE_FLAG',
+  'PAYMENT',
+  'EXPORT',
 ] as const
 
 export async function generateMetadata({
@@ -61,18 +68,40 @@ function parseDate(value: string | undefined, endOfDay = false): Date | undefine
   return Number.isNaN(date.getTime()) ? undefined : date
 }
 
-function renderValues(values: Record<string, unknown>): string | null {
-  const keys = Object.keys(values)
-  if (keys.length === 0) return null
-  return keys.map((key) => `${key}: ${formatValue(values[key])}`).join('\n')
-}
-
 function formatValue(value: unknown): string {
   if (value === null || value === undefined) return '—'
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return String(value)
   }
   return encodeJson(value)
+}
+
+interface FieldChange {
+  field: string
+  before: string
+  after: string
+  /** Same on both sides: context the action recorded, not something that moved. */
+  unchanged: boolean
+}
+
+/**
+ * Folds the stored before/after snapshots into one list of changed fields.
+ *
+ * Two adjacent JSON blobs make the reader diff them by eye, which is exactly the work a
+ * log is supposed to save. `recordAudit` already stores only what changed, so the union
+ * of both keysets *is* the change set — a key present on one side only means the field
+ * was set from nothing or cleared to nothing, and both read correctly as "— → value".
+ */
+function changedFields(
+  oldValue: Record<string, unknown>,
+  newValue: Record<string, unknown>,
+): FieldChange[] {
+  const keys = [...new Set([...Object.keys(oldValue), ...Object.keys(newValue)])]
+  return keys.map((field) => {
+    const before = formatValue(oldValue[field])
+    const after = formatValue(newValue[field])
+    return { field, before, after, unchanged: before === after }
+  })
 }
 
 export default async function AdminAuditPage({
@@ -131,22 +160,46 @@ export default async function AdminAuditPage({
       ),
     },
     {
-      key: 'old',
-      header: t.admin.auditOld,
-      cell: (row) => (
-        <pre className="whitespace-pre-wrap break-words text-caption text-muted-foreground">
-          {renderValues(row.oldValue) ?? '—'}
-        </pre>
-      ),
-    },
-    {
-      key: 'new',
-      header: t.admin.auditNew,
-      cell: (row) => (
-        <pre className="whitespace-pre-wrap break-words text-caption">
-          {renderValues(row.newValue) ?? '—'}
-        </pre>
-      ),
+      key: 'diff',
+      header: t.admin.auditDiff,
+      className: 'min-w-[260px]',
+      cell: (row) => {
+        const changes = changedFields(row.oldValue, row.newValue)
+        if (changes.length === 0) {
+          return <span className="text-caption text-muted-foreground">{t.admin.auditNoChanges}</span>
+        }
+        return (
+          <ul className="space-y-1">
+            {changes.map((change) => (
+              <li key={change.field} className="flex flex-wrap items-baseline gap-1.5">
+                <span className="font-mono text-caption text-muted-foreground">
+                  {change.field}
+                </span>
+                {/* `min-w-0` on every value: a flex item will not shrink below its own
+                    content otherwise, and an audit value is regularly one unbroken JSON
+                    string that would then push the card off a 320px screen. */}
+                {change.unchanged ? (
+                  <span className="min-w-0 break-words text-caption text-muted-foreground">
+                    {change.after}
+                  </span>
+                ) : (
+                  <>
+                    <span className="min-w-0 break-words text-caption text-muted-foreground line-through">
+                      {change.before}
+                    </span>
+                    <span aria-hidden className="text-caption text-muted-foreground">
+                      →
+                    </span>
+                    <span className="min-w-0 break-words text-caption font-medium">
+                      {change.after}
+                    </span>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )
+      },
     },
     {
       key: 'reason',
@@ -206,9 +259,20 @@ export default async function AdminAuditPage({
       </TableToolbar>
 
       <div>
-        <p className="mb-3 tnum text-sm text-muted-foreground">
-          {fmt(t.admin.totalRows, { count: result.total })}
-        </p>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <p className="tnum text-sm text-muted-foreground">
+            {fmt(t.admin.totalRows, { count: result.total })}
+          </p>
+          <ExportLink
+            className="ml-auto"
+            href={`${localePath(locale, 'admin', 'export')}${buildQuery({
+              entity: 'audit',
+              actor: actorId,
+              entityType,
+            })}`}
+            label={t.admin.exportCsv}
+          />
+        </div>
 
         <DataTable
           rows={result.items}
