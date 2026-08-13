@@ -116,7 +116,7 @@ export function StepPreview({
         {t.productForm.previewHint}
       </Alert>
 
-      <article className="overflow-hidden rounded-lg border border-border bg-card">
+      <article className="surface overflow-hidden">
         {/* --- gallery --- */}
         {cover ? (
           <div>
@@ -211,7 +211,7 @@ export function StepPreview({
           {tiers.length > 0 && priceBani !== null ? (
             <section>
               <h3 className="text-sm font-semibold">{t.product.priceTiers}</h3>
-              <ul className="mt-2 divide-y divide-border rounded-md border border-border">
+              <ul className="surface-muted mt-2 divide-y divide-border rounded-md">
                 {tiers.map((tier, index) => {
                   const discount = tierDiscountPercent(priceBani, tier.priceBani)
                   return (
@@ -256,7 +256,7 @@ export function StepPreview({
           {specs.length > 0 || advanced.length > 0 ? (
             <section>
               <h3 className="text-sm font-semibold">{t.product.attributes}</h3>
-              <dl className="mt-2 divide-y divide-border rounded-md border border-border text-sm">
+              <dl className="surface-muted mt-2 divide-y divide-border rounded-md text-sm">
                 {[...specs, ...advanced].map((row) => (
                   <div key={row.label} className="flex flex-wrap gap-x-3 gap-y-0.5 px-3 py-2">
                     <dt className="min-w-[40%] text-muted-foreground">{row.label}</dt>

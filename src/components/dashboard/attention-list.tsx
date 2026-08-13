@@ -13,14 +13,21 @@ import { cn } from '@/lib/utils'
  *
  * Rows are ordered by the caller, most urgent first, and capped there too: a list that
  * needs scrolling stops being a to-do list.
+ *
+ * Each row is its own raised surface separated by a gap, rather than a hairline inside
+ * one boxed list. Six things that each want a tap are six targets, and a divided list
+ * reads as one object you scan; separate cards read as a queue you work through. The
+ * tone icon sits in a tinted chip so urgency is carried by a shape big enough to see at
+ * arm's length, not by the colour of an 18px glyph.
  */
 
 export type AttentionTone = 'destructive' | 'warning' | 'info'
 
-const TONES: Record<AttentionTone, string> = {
-  destructive: 'text-destructive',
-  warning: 'text-warning',
-  info: 'text-primary',
+/** Chip fill and glyph colour per tone; `.icon-chip` supplies the shape. */
+const CHIPS: Record<AttentionTone, string> = {
+  destructive: 'bg-destructive-soft text-destructive',
+  warning: 'bg-warning-soft text-warning',
+  info: 'bg-primary-soft text-primary',
 }
 
 const ICONS: Record<AttentionTone, typeof AlertTriangle> = {
@@ -46,27 +53,24 @@ export function AttentionList({
   emptyText: string
 }) {
   if (items.length === 0) {
-    return (
-      <p className="rounded-lg border border-dashed border-border bg-card px-4 py-6 text-sm text-muted-foreground">
-        {emptyText}
-      </p>
-    )
+    // Nothing is stuck: a calm inset block, not a dashed outline around an absence.
+    return <p className="surface-muted px-4 py-6 text-sm text-muted-foreground">{emptyText}</p>
   }
 
   return (
-    <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-card">
+    <ul className="space-y-2">
       {items.map((item) => {
         const Icon = ICONS[item.tone]
         return (
           <li key={item.key}>
             <Link
               href={item.href}
-              className="flex min-h-[56px] items-center gap-3 px-3 py-3 text-sm transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-4"
+              className="surface-interactive flex min-h-[64px] items-center gap-3 p-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:gap-4 sm:p-4"
             >
-              <Icon
-                aria-hidden
-                className={cn('h-[18px] w-[18px] shrink-0', TONES[item.tone])}
-              />
+              <span aria-hidden className={cn('icon-chip h-10 w-10', CHIPS[item.tone])}>
+                <Icon className="h-5 w-5" />
+              </span>
+
               <span className="min-w-0 flex-1">
                 <span className="clamp-2 block leading-snug">{item.text}</span>
                 {item.meta ? (
@@ -75,10 +79,8 @@ export function AttentionList({
                   </span>
                 ) : null}
               </span>
-              <ChevronRight
-                aria-hidden
-                className="h-4 w-4 shrink-0 text-muted-foreground"
-              />
+
+              <ChevronRight aria-hidden className="h-5 w-5 shrink-0 text-muted-foreground" />
             </Link>
           </li>
         )

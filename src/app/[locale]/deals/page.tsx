@@ -79,11 +79,13 @@ export default async function DealsPage({
   const basePath = localePath(locale, 'deals')
 
   return (
-    <div className="container py-8">
+    <div className="container py-10">
       <h1 className="text-h1">{t.deal.title}</h1>
 
       {/* --------------------------------------------------------- status filter */}
-      <nav aria-label={t.common.status} className="no-scrollbar mt-5 overflow-x-auto">
+      {/* `min-w-0` keeps this scroller from sizing the page: without it the row of
+          status chips widens the container and the whole page scrolls sideways at 320px. */}
+      <nav aria-label={t.common.status} className="no-scrollbar mt-6 w-full min-w-0 overflow-x-auto">
         <ul className="flex min-w-max gap-1.5">
           <li>
             <Link
@@ -116,7 +118,7 @@ export default async function DealsPage({
 
       {deals.length === 0 ? (
         <EmptyState
-          className="mt-6 rounded-lg border border-border bg-card"
+          className="surface mt-6"
           icon={<Handshake aria-hidden />}
           title={t.deal.emptyTitle}
           description={t.deal.emptyText}
@@ -128,7 +130,7 @@ export default async function DealsPage({
         />
       ) : (
         <>
-          <ul className="mt-6 space-y-3">
+          <ul className="mt-6 space-y-3 md:space-y-4">
             {deals.map((deal) => {
               const isBuyer = deal.buyerCompanyId === user.companyId
               const counterparty = isBuyer
@@ -139,7 +141,7 @@ export default async function DealsPage({
                 <li key={deal.id}>
                   <Link
                     href={localePath(locale, 'deals', deal.id)}
-                    className="block rounded-lg border border-border bg-card p-4 shadow-card transition-colors hover:border-primary/40"
+                    className="surface-interactive block p-4 md:p-5"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0">

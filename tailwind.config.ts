@@ -65,22 +65,34 @@ const config: Config = {
         sm: ['0.875rem', { lineHeight: '1.35rem' }],
         base: ['0.9375rem', { lineHeight: '1.55rem' }],
         lg: ['1.0625rem', { lineHeight: '1.65rem' }],
-        h3: ['1.25rem', { lineHeight: '1.75rem', letterSpacing: '-0.01em' }],
-        h2: ['1.625rem', { lineHeight: '2.1rem', letterSpacing: '-0.015em' }],
-        h1: ['2.125rem', { lineHeight: '2.55rem', letterSpacing: '-0.02em' }],
-        display: ['2.75rem', { lineHeight: '3.15rem', letterSpacing: '-0.025em' }],
+        // Headings carry a notch more presence than before; body stays at 15px so a
+        // wholesale buyer still sees a full grid of offers without scrolling.
+        h3: ['1.3125rem', { lineHeight: '1.8rem', letterSpacing: '-0.012em' }],
+        h2: ['1.75rem', { lineHeight: '2.2rem', letterSpacing: '-0.018em' }],
+        h1: ['2.25rem', { lineHeight: '2.7rem', letterSpacing: '-0.022em' }],
+        display: ['3rem', { lineHeight: '3.4rem', letterSpacing: '-0.028em' }],
       },
       borderRadius: {
-        sm: '0.375rem',
-        DEFAULT: '0.5rem',
-        md: '0.625rem',
-        lg: '0.875rem',
-        xl: '1.125rem',
+        // Softer than a classifieds board, tighter than a consumer delivery app.
+        sm: '0.5rem', // 8
+        DEFAULT: '0.625rem', // 10
+        md: '0.75rem', // 12
+        lg: '1rem', // 16 — the card radius
+        xl: '1.25rem', // 20
+        '2xl': '1.5rem', // 24
       },
       boxShadow: {
-        // Two elevations only. Depth comes from borders, not stacked shadows.
-        card: '0 1px 2px 0 rgb(16 24 32 / 0.04)',
-        pop: '0 8px 28px -6px rgb(16 24 32 / 0.14), 0 2px 6px -2px rgb(16 24 32 / 0.06)',
+        /**
+         * Depth now comes from elevation rather than outlines. The previous scale was
+         * so faint that every surface needed a 1px border to be legible at all, which
+         * is what made the product read as a wireframe.
+         *
+         * Each level is two shadows: a tight contact shadow that anchors the edge, and
+         * a wide soft one that lifts it off the background.
+         */
+        card: '0 1px 2px 0 rgb(16 24 32 / 0.05), 0 4px 12px -4px rgb(16 24 32 / 0.08)',
+        hover: '0 2px 4px 0 rgb(16 24 32 / 0.06), 0 10px 24px -8px rgb(16 24 32 / 0.14)',
+        pop: '0 10px 32px -8px rgb(16 24 32 / 0.16), 0 3px 8px -3px rgb(16 24 32 / 0.07)',
       },
       keyframes: {
         'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },

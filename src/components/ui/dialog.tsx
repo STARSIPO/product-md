@@ -113,12 +113,14 @@ export function Dialog({
         >
           <div
             className={cn(
-              'w-full animate-slide-up rounded-t-lg border border-border bg-card shadow-pop sm:rounded-lg',
+              // Elevation only: shadow-pop separates the panel from the scrim, so the
+              // outline and both internal rules are gone. Spacing does that work now.
+              'w-full animate-slide-up rounded-t-xl bg-card shadow-pop sm:rounded-xl',
               SIZES[size],
               className,
             )}
           >
-            <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
+            <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-5">
               <div className="min-w-0">
                 <h2 id={titleId} className="text-h3">
                   {title}
@@ -141,10 +143,17 @@ export function Dialog({
               ) : null}
             </div>
 
-            <div className="px-5 py-4 text-sm">{children}</div>
+            <div
+              className={cn(
+                'px-5 text-sm',
+                footer ? undefined : 'pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-5',
+              )}
+            >
+              {children}
+            </div>
 
             {footer ? (
-              <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] sm:pb-3.5">
+              <div className="flex flex-wrap items-center justify-end gap-2 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 sm:pb-5">
                 {footer}
               </div>
             ) : null}

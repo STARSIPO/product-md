@@ -121,7 +121,7 @@ export default async function CategoryPage({
   }
 
   return (
-    <div className="container py-6 md:py-8">
+    <div className="container py-8 md:py-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
@@ -137,14 +137,15 @@ export default async function CategoryPage({
       </header>
 
       {children.length > 0 ? (
-        <nav aria-label={t.catalog.subcategories} className="mt-5">
-          <h2 className="text-sm font-semibold">{t.catalog.subcategories}</h2>
-          <ul className="mt-2 flex flex-wrap gap-2">
+        <nav aria-label={t.catalog.subcategories} className="mt-6 min-w-0">
+          <h2 className="text-sm font-semibold text-muted-foreground">{t.catalog.subcategories}</h2>
+          <ul className="mt-2.5 flex flex-wrap gap-2">
             {children.map((child) => (
               <li key={child.id}>
+                {/* Filled pills, not outlined mini-cards. */}
                 <Link
                   href={localePath(locale, 'category', child.slugs[locale])}
-                  className="inline-flex min-h-[44px] items-center rounded-full border border-border bg-card px-3.5 text-sm transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-[36px]"
+                  className="inline-flex min-h-[44px] items-center rounded-full bg-muted px-4 text-sm font-medium transition-colors hover:bg-primary-soft hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-[36px]"
                 >
                   {child.names[locale]}
                 </Link>
@@ -154,16 +155,16 @@ export default async function CategoryPage({
         </nav>
       ) : null}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[264px_minmax(0,1fr)]">
-        <aside className="hidden lg:block">
-          <div className="sticky top-20 rounded-lg border border-border bg-card p-4">
-            <h2 className="mb-4 text-sm font-semibold">{t.filters.title}</h2>
+      <div className="mt-6 grid gap-4 lg:grid-cols-[264px_minmax(0,1fr)] lg:gap-6">
+        <aside className="hidden min-w-0 lg:block">
+          <div className="surface sticky top-20 p-5">
+            <h2 className="mb-4 text-h3">{t.filters.title}</h2>
             <FilterPanel {...panelProps} />
           </div>
         </aside>
 
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
             <FilterSheet {...panelProps} />
 
             <p aria-live="polite" className="tnum text-sm text-muted-foreground">
@@ -187,7 +188,7 @@ export default async function CategoryPage({
 
           {results.items.length === 0 ? (
             <EmptyState
-              className="mt-6 rounded-lg border border-border bg-card"
+              className="surface mt-6"
               icon={<PackageSearch aria-hidden />}
               title={t.catalog.emptyTitle}
               description={t.catalog.emptyText}
@@ -205,7 +206,7 @@ export default async function CategoryPage({
             />
           ) : (
             <>
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
                 {results.items.map((product, index) => (
                   <ProductCard
                     key={product.id}

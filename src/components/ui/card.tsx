@@ -15,9 +15,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(function Card(
     <div
       ref={ref}
       className={cn(
-        'rounded-lg border border-border bg-card text-card-foreground shadow-card',
+        // No outline: the card is separated from the page by elevation, not a line.
+        'surface text-card-foreground',
         interactive &&
-          'transition-[border-color,box-shadow] duration-150 focus-within:border-primary/35 hover:border-primary/35 hover:shadow-pop',
+          'transition-shadow duration-200 focus-within:shadow-hover hover:shadow-hover',
         className,
       )}
       {...props}
@@ -28,7 +29,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(function Card(
 export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   function CardHeader({ className, ...props }, ref) {
     return (
-      <div ref={ref} className={cn('flex flex-col gap-1 px-5 pb-3 pt-4', className)} {...props} />
+      <div ref={ref} className={cn('flex flex-col gap-1 px-5 pb-3 pt-5', className)} {...props} />
     )
   },
 )
@@ -49,7 +50,7 @@ export const CardDescription = React.forwardRef<
 
 export const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   function CardContent({ className, ...props }, ref) {
-    return <div ref={ref} className={cn('px-5 py-4', className)} {...props} />
+    return <div ref={ref} className={cn('px-5 py-5', className)} {...props} />
   },
 )
 
@@ -59,7 +60,8 @@ export const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
       <div
         ref={ref}
         className={cn(
-          'flex flex-wrap items-center gap-2 border-t border-border px-5 py-3.5',
+          // Separated by space rather than a rule; the divider was pure visual noise.
+          'flex flex-wrap items-center gap-2 px-5 pb-5 pt-1',
           className,
         )}
         {...props}

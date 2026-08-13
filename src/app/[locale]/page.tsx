@@ -109,27 +109,37 @@ export default async function HomePage({ params }: { params: { locale: string } 
     roots.map(async (root) => {
       const subtree = await getSubtreeIds(root.id)
       const count = subtree.reduce((sum, id) => sum + (countByCategory.get(id) ?? 0), 0)
-      return { id: root.id, name: root.names[locale], slug: root.slugs[locale], count }
+      return {
+        id: root.id,
+        name: root.names[locale],
+        slug: root.slugs[locale],
+        count,
+        icon: root.icon,
+      }
     }),
   )
 
   return (
     <>
       {/* ------------------------------------------------- search + pitch band */}
-      <section className="border-b border-border bg-card">
-        <div className="container py-6 md:py-7">
+      {/*
+        No bottom rule: this band and the header form one continuous white top zone,
+        and the catalogue below it separates itself by sitting on the page background.
+      */}
+      <section className="bg-card">
+        <div className="container pb-8 pt-7 md:pb-9 md:pt-8">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h1 className="text-h2">{t.home.heroTitle}</h1>
             <p className="text-sm text-muted-foreground">{t.home.heroSubtitle}</p>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-5">
             <CatalogSearch
               categories={categories.map(({ id, name, slug }) => ({ id, name, slug }))}
             />
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-caption text-muted-foreground">
+          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-caption text-muted-foreground">
             <span className="tnum">
               <strong className="text-sm font-semibold text-foreground">{productCount}</strong>{' '}
               {t.home.statProducts}
@@ -168,7 +178,7 @@ export default async function HomePage({ params }: { params: { locale: string } 
       <PromoStrip items={promoted as PromoItem[]} locale={locale} t={t} />
 
       {/* -------------------------------------------- catalogue rail + listings */}
-      <div className="container grid gap-6 py-6 lg:grid-cols-[248px_minmax(0,1fr)]">
+      <div className="container grid gap-6 py-8 lg:grid-cols-[248px_minmax(0,1fr)] lg:gap-8">
         <CategoryRail categories={categories} locale={locale} t={t} />
 
         <div className="min-w-0 space-y-10">
@@ -179,7 +189,7 @@ export default async function HomePage({ params }: { params: { locale: string } 
               linkLabel={t.common.showAll}
             />
             {products.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
                 {products.map((product, index) => (
                   <ProductCard
                     key={product.id}
@@ -203,7 +213,7 @@ export default async function HomePage({ params }: { params: { locale: string } 
               linkLabel={t.common.showAll}
             />
             {requests.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 md:gap-4">
                 {requests.map((request) => (
                   <RequestCard key={request.id} request={request} locale={locale} t={t} />
                 ))}
@@ -220,7 +230,7 @@ export default async function HomePage({ params }: { params: { locale: string } 
                 href={localePath(locale, 'suppliers')}
                 linkLabel={t.common.showAll}
               />
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 md:gap-4">
                 {suppliers.map((company) => (
                   <CompanyCard key={company.id} company={company} locale={locale} t={t} />
                 ))}
@@ -231,41 +241,38 @@ export default async function HomePage({ params }: { params: { locale: string } 
       </div>
 
       {/* ------------------------------------------------ explanation, low down */}
-      <section className="border-t border-border bg-card">
+      <section className="bg-card">
         <div className="container py-10">
-          <h2 className="text-h3">{t.home.howItWorks}</h2>
-          <ol className="mt-5 grid gap-4 md:grid-cols-3">
+          <h2 className="text-h2">{t.home.howItWorks}</h2>
+          <ol className="mt-6 grid gap-3 md:grid-cols-3 md:gap-4">
             <Step
               index={1}
-              icon={<ClipboardList className="h-4 w-4" aria-hidden />}
+              icon={<ClipboardList className="h-5 w-5" aria-hidden />}
               title={t.home.howBuyerStep1Title}
               text={t.home.howBuyerStep1Text}
             />
             <Step
               index={2}
-              icon={<Store className="h-4 w-4" aria-hidden />}
+              icon={<Store className="h-5 w-5" aria-hidden />}
               title={t.home.howBuyerStep2Title}
               text={t.home.howBuyerStep2Text}
             />
             <Step
               index={3}
-              icon={<Handshake className="h-4 w-4" aria-hidden />}
+              icon={<Handshake className="h-5 w-5" aria-hidden />}
               title={t.home.howBuyerStep3Title}
               text={t.home.howBuyerStep3Text}
             />
           </ol>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-4">
             {[
               t.home.safetyPoint1,
               t.home.safetyPoint2,
               t.home.safetyPoint3,
               t.home.safetyPoint4,
             ].map((point) => (
-              <p
-                key={point}
-                className="flex gap-2 rounded-lg border border-border bg-background p-3 text-sm"
-              >
+              <p key={point} className="surface-muted flex gap-2.5 rounded-md p-4 text-sm">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                 {point}
               </p>
@@ -276,7 +283,7 @@ export default async function HomePage({ params }: { params: { locale: string } 
 
       {!user ? (
         <section className="container py-10">
-          <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-primary-soft/50 px-6 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div className="flex flex-col items-center gap-5 rounded-lg bg-primary-soft px-6 py-8 text-center sm:flex-row sm:justify-between sm:px-8 sm:text-left">
             <div>
               <h2 className="text-h3">{t.home.ctaTitle}</h2>
               <p className="mt-1 text-sm text-muted-foreground">{t.home.ctaText}</p>
@@ -304,11 +311,11 @@ function SectionHeading({
   linkLabel: string
 }) {
   return (
-    <div className="mb-3 flex items-end justify-between gap-4">
+    <div className="mb-4 flex items-end justify-between gap-4">
       <h2 className="text-h3">{title}</h2>
       <Link
         href={href}
-        className="shrink-0 rounded text-sm font-medium text-primary transition-colors hover:text-primary-hover"
+        className="shrink-0 rounded-sm text-sm font-medium text-primary transition-colors hover:text-primary-hover"
       >
         {linkLabel}
         <ArrowRight className="ml-1 inline h-4 w-4" aria-hidden />
@@ -319,9 +326,7 @@ function SectionHeading({
 
 function EmptyRow({ text }: { text: string }) {
   return (
-    <p className="rounded-lg border border-dashed border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-      {text}
-    </p>
+    <p className="surface-muted px-4 py-10 text-center text-sm text-muted-foreground">{text}</p>
   )
 }
 
@@ -337,15 +342,13 @@ function Step({
   text: string
 }) {
   return (
-    <li className="rounded-lg border border-border bg-background p-4">
-      <div className="flex items-center gap-2">
-        <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary-soft text-primary">
-          {icon}
-        </span>
+    <li className="surface-muted p-5">
+      <div className="flex items-center gap-2.5">
+        <span className="icon-chip h-10 w-10">{icon}</span>
         <span className="tnum text-caption font-semibold text-muted-foreground">0{index}</span>
       </div>
-      <h3 className="mt-2.5 text-sm font-medium">{title}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{text}</p>
+      <h3 className="mt-3.5 text-base font-medium">{title}</h3>
+      <p className="mt-1.5 text-sm text-muted-foreground">{text}</p>
     </li>
   )
 }

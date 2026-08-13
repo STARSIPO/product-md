@@ -87,7 +87,7 @@ export default async function ModerationDocumentsPage({
     if (!document) {
       return (
         <EmptyState
-          className="rounded-lg border border-border bg-card"
+          className="surface"
           title={t.states.notFoundTitle}
           description={t.states.notFoundText}
           action={
@@ -129,8 +129,8 @@ export default async function ModerationDocumentsPage({
           {t.moderation.backToList}
         </Link>
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <article className="min-w-0 space-y-4 rounded-lg border border-border bg-card p-4">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <article className="surface min-w-0 space-y-4 p-5">
             <header>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge
@@ -158,7 +158,7 @@ export default async function ModerationDocumentsPage({
               ))}
             </dl>
 
-            <div className="rounded-md border border-border bg-muted p-3">
+            <div className="surface-muted rounded-md p-3.5">
               <a
                 href={fileHref}
                 target="_blank"
@@ -185,7 +185,7 @@ export default async function ModerationDocumentsPage({
             </div>
 
             {document.moderatorComment ? (
-              <p className="rounded-md border border-border p-3 text-sm">
+              <p className="surface-muted rounded-md p-3.5 text-sm">
                 <span className="block text-caption text-muted-foreground">
                   {t.verification.moderatorComment}
                 </span>
@@ -219,7 +219,7 @@ export default async function ModerationDocumentsPage({
           <div className="space-y-4">
             <DecisionPanel kind="document" entityId={document.id} />
 
-            <section className="rounded-lg border border-border bg-card p-4">
+            <section className="surface p-5">
               <h2 className="text-h3">{t.moderation.decisionLog}</h2>
               <ol className="mt-2 space-y-2">
                 {history.items.length === 0 ? (
@@ -339,7 +339,7 @@ export default async function ModerationDocumentsPage({
 
         {result.items.length === 0 ? (
           <EmptyState
-            className="rounded-lg border border-border bg-card"
+            className="surface"
             icon={<FileText aria-hidden />}
             title={t.moderation.empty}
             description={t.moderation.emptyText}

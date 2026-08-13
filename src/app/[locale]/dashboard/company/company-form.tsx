@@ -540,7 +540,9 @@ export function CompanyForm({
               className="h-20 w-20 shrink-0 rounded-lg border border-border object-cover"
             />
           ) : (
-            <span className="grid h-20 w-20 shrink-0 place-items-center rounded-lg border border-dashed border-border bg-muted text-muted-foreground">
+            // The muted fill already says "nothing stored yet"; the dashed outline round
+            // it was a second way of saying the same thing.
+            <span className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
               <ImagePlus className="h-5 w-5" aria-hidden />
             </span>
           )}
@@ -601,7 +603,9 @@ export function CompanyForm({
           ) : null}
         </div>
 
-        <div className="border-t border-border pt-4">
+        {/* The logo block above and the gallery below are separated by space; the rule
+            that used to run between them cut one panel into two. */}
+        <div className="pt-2">
           <p className="text-sm font-medium">{t.company.photos}</p>
           <p className="mt-0.5 text-caption text-muted-foreground">
             {fmt(t.company.photosCount, { count: photos.length })} ·{' '}
@@ -633,7 +637,7 @@ export function CompanyForm({
                         router.refresh()
                       })
                     }
-                    className="absolute right-1 top-1 grid h-11 w-11 place-items-center rounded-md bg-card/90 text-muted-foreground shadow-card transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="absolute right-1 top-1 grid h-11 w-11 place-items-center rounded-full bg-card/90 text-muted-foreground shadow-card transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Trash2 className="h-4 w-4" aria-hidden />
                   </button>
@@ -669,7 +673,11 @@ export function CompanyForm({
       {/* Sticky on a phone: the save button of a five-panel form is otherwise a scroll
           away from whichever field was just edited. The offset is the same height
           `.pb-safe-nav` reserves, so the bar floats above the fixed bottom navigation
-          instead of behind it. */}
+          instead of behind it.
+
+          One of the few rules kept in this pass: fields slide *underneath* this bar, and
+          the line is what tells you the bar is in front rather than part of the page.
+          It is dropped from `sm` up, where the bar stops floating at all. */}
       <div className="sticky bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
         <Button loading={pending} onClick={submit} size="lg" fullWidth className="sm:w-auto">
           {t.common.save}
@@ -707,10 +715,7 @@ function CompanyPreview({
   const orgType = t.orgTypes[values.orgType as keyof typeof t.orgTypes]
 
   return (
-    <section
-      aria-labelledby="company-preview-title"
-      className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-5"
-    >
+    <section aria-labelledby="company-preview-title" className="surface p-4 sm:p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h2 id="company-preview-title" className="text-h3">
           {t.company.previewTitle}
@@ -726,7 +731,9 @@ function CompanyPreview({
         ) : null}
       </div>
 
-      <div className="mt-3 flex gap-3 rounded-md border border-border bg-background p-3">
+      {/* Inset rather than outlined: this is a sample of another screen embedded in
+          this one, and it should sit *in* the card rather than float on top of it. */}
+      <div className="surface-muted mt-3 flex gap-3 rounded-md p-3">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -737,7 +744,7 @@ function CompanyPreview({
             className="h-14 w-14 shrink-0 rounded-md border border-border object-cover"
           />
         ) : (
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md border border-dashed border-border text-muted-foreground">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md bg-card text-muted-foreground">
             <Building2 className="h-5 w-5" aria-hidden />
           </span>
         )}
@@ -1065,7 +1072,7 @@ export function WorkingHoursEditor({
         return (
           <li
             key={day}
-            className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-border bg-card px-3 py-2"
+            className="surface-muted flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-3 py-2"
           >
             <span className="w-24 shrink-0 text-sm font-medium sm:w-28">{t.company.days[day]}</span>
 
@@ -1169,7 +1176,7 @@ export function Section({
   children: ReactNode
 }) {
   return (
-    <section className="space-y-4 rounded-lg border border-border bg-card p-4 sm:p-5">
+    <section className="surface space-y-4 p-4 sm:p-5">
       <div>
         <h2 className="text-h3">{title}</h2>
         {description ? (

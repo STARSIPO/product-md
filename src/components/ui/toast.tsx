@@ -37,14 +37,17 @@ const MAX_VISIBLE = 3
 
 const VARIANTS: Record<ToastVariant, { icon: ReactNode; tone: string }> = {
   success: {
-    icon: <CheckCircle2 aria-hidden="true" className="h-[18px] w-[18px]" />,
-    tone: 'text-success',
+    icon: <CheckCircle2 aria-hidden="true" className="h-5 w-5" />,
+    tone: 'bg-success-soft text-success',
   },
   error: {
-    icon: <AlertCircle aria-hidden="true" className="h-[18px] w-[18px]" />,
-    tone: 'text-destructive',
+    icon: <AlertCircle aria-hidden="true" className="h-5 w-5" />,
+    tone: 'bg-destructive-soft text-destructive',
   },
-  info: { icon: <Info aria-hidden="true" className="h-[18px] w-[18px]" />, tone: 'text-primary' },
+  info: {
+    icon: <Info aria-hidden="true" className="h-5 w-5" />,
+    tone: 'bg-primary-soft text-primary',
+  },
 }
 
 export interface ToastProviderProps {
@@ -119,12 +122,12 @@ function ToastCard({
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="pointer-events-auto flex animate-slide-up items-start gap-3 rounded-md border border-border bg-card p-3.5 shadow-pop"
+      className="surface pointer-events-auto flex animate-slide-up items-start gap-3 p-4 shadow-pop"
     >
-      <span aria-hidden="true" className={cn('mt-[1px] shrink-0', tone.tone)}>
+      <span aria-hidden="true" className={cn('icon-chip h-9 w-9', tone.tone)}>
         {tone.icon}
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 self-center">
         <p className="text-sm font-semibold text-foreground">{item.title}</p>
         {item.description ? (
           <p className="mt-0.5 text-caption text-muted-foreground">{item.description}</p>

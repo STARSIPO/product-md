@@ -38,7 +38,11 @@ function pageSlots(page: number, pageCount: number): Slot[] {
 }
 
 const cellClasses =
-  'inline-flex h-11 min-w-[44px] items-center justify-center rounded-md border px-3 text-sm transition-colors duration-150'
+  'inline-flex h-11 min-w-[44px] items-center justify-center rounded-md px-3 text-sm transition-colors duration-150'
+
+/* Icon-only controls keep an edge — there is no label to hint they are pressable. */
+const arrowClasses = 'border border-input bg-card text-foreground hover:bg-muted'
+const arrowDisabledClasses = 'border border-input bg-card text-muted-foreground/45'
 
 export function Pagination({ page, pageCount, buildHref, labels, className }: PaginationProps) {
   if (pageCount <= 1) return null
@@ -55,15 +59,12 @@ export function Pagination({ page, pageCount, buildHref, labels, className }: Pa
               href={buildHref(current - 1)}
               rel="prev"
               aria-label={labels.previous}
-              className={cn(cellClasses, 'border-input bg-card text-foreground hover:bg-muted')}
+              className={cn(cellClasses, arrowClasses)}
             >
               <ChevronLeft aria-hidden="true" className="h-4 w-4" />
             </Link>
           ) : (
-            <span
-              aria-hidden="true"
-              className={cn(cellClasses, 'border-border bg-card text-muted-foreground/45')}
-            >
+            <span aria-hidden="true" className={cn(cellClasses, arrowDisabledClasses)}>
               <ChevronLeft className="h-4 w-4" />
             </span>
           )}
@@ -86,9 +87,11 @@ export function Pagination({ page, pageCount, buildHref, labels, className }: Pa
                 className={cn(
                   cellClasses,
                   'tnum',
+                  // The numbers carry themselves: nine outlined boxes in a row was the
+                  // single busiest thing on the catalogue page.
                   slot === current
-                    ? 'border-primary bg-primary font-semibold text-primary-foreground'
-                    : 'border-input bg-card text-foreground hover:bg-muted',
+                    ? 'bg-primary font-semibold text-primary-foreground'
+                    : 'text-foreground hover:bg-muted',
                 )}
               >
                 {slot}
@@ -103,15 +106,12 @@ export function Pagination({ page, pageCount, buildHref, labels, className }: Pa
               href={buildHref(current + 1)}
               rel="next"
               aria-label={labels.next}
-              className={cn(cellClasses, 'border-input bg-card text-foreground hover:bg-muted')}
+              className={cn(cellClasses, arrowClasses)}
             >
               <ChevronRight aria-hidden="true" className="h-4 w-4" />
             </Link>
           ) : (
-            <span
-              aria-hidden="true"
-              className={cn(cellClasses, 'border-border bg-card text-muted-foreground/45')}
-            >
+            <span aria-hidden="true" className={cn(cellClasses, arrowDisabledClasses)}>
               <ChevronRight className="h-4 w-4" />
             </span>
           )}

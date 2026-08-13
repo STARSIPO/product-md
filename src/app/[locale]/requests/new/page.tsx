@@ -38,7 +38,7 @@ export default async function NewRequestPage({ params }: { params: { locale: str
   ])
 
   return (
-    <div className="container max-w-3xl py-8">
+    <div className="container max-w-3xl py-10">
       <h1 className="text-h1">{t.requestForm.createTitle}</h1>
 
       <div className="mt-6">

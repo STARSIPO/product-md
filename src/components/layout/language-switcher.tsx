@@ -25,12 +25,13 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   }
 
   return (
+    // A segmented control: one soft track, the active language raised out of it.
     <div
-      className={cn('flex items-center gap-0.5 rounded-md p-0.5', className)}
+      className={cn('inline-flex items-center gap-0.5 rounded-full bg-muted p-1', className)}
       role="group"
       aria-label={t.nav.language}
     >
-      <Globe className="mx-1 h-4 w-4 text-muted-foreground" aria-hidden />
+      <Globe className="ml-1.5 mr-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
       {LOCALES.map((option) => (
         <button
           key={option}
@@ -38,10 +39,12 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           onClick={() => select(option)}
           aria-current={option === locale ? 'true' : undefined}
           className={cn(
-            'min-h-[36px] rounded px-2 text-sm font-medium uppercase transition-colors',
+            // 44px on phones (the mobile menu renders this switcher), tighter once it
+            // sits in the desktop header.
+            'min-h-[44px] rounded-full px-3 text-sm font-medium uppercase transition-colors md:min-h-[32px] md:px-2.5',
             option === locale
-              ? 'bg-muted text-foreground'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              ? 'bg-card text-foreground shadow-card'
+              : 'text-muted-foreground hover:text-foreground',
           )}
         >
           <span className="sr-only">{LOCALE_LABELS[option]}</span>

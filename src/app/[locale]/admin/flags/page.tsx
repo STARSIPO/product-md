@@ -48,7 +48,7 @@ export default async function AdminFlagsPage({ params }: { params: { locale: str
         {t.admin.billingWarning}
       </Alert>
 
-      <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+      <ul className="surface divide-y divide-border">
         {FEATURE_FLAGS.map((key) => (
           <li key={key} className="flex flex-wrap items-center gap-3 px-4 py-4">
             <div className="min-w-0 flex-1">

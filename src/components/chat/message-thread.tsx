@@ -180,7 +180,7 @@ export function MessageThread({
         aria-live="polite"
         aria-relevant="additions"
         aria-label={t.chat.threadLabel}
-        className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4"
+        className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-3 py-4"
       >
         {messages.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
@@ -211,7 +211,7 @@ export function MessageThread({
 
               {message.kind === 'SYSTEM' ? (
                 <p className="my-2 text-center text-caption text-muted-foreground">
-                  <span className="rounded-full bg-muted px-3 py-1">
+                  <span className="rounded-full bg-muted px-3 py-1.5">
                     {systemMessageText(t, message.body, message.params)}
                   </span>
                 </p>
@@ -224,10 +224,12 @@ export function MessageThread({
                 >
                   <div
                     className={cn(
-                      'max-w-[85%] rounded-lg px-3 py-2 sm:max-w-[75%]',
+                      // The corner nearest its own side is squared off, so which way a
+                      // message went is legible before a word of it is read.
+                      'max-w-[85%] rounded-lg px-3.5 py-2.5 sm:max-w-[75%]',
                       message.own
-                        ? 'bg-primary text-primary-foreground'
-                        : 'border border-border bg-card',
+                        ? 'rounded-br-sm bg-primary text-primary-foreground'
+                        : 'rounded-bl-sm bg-muted text-foreground',
                     )}
                   >
                     <p
@@ -268,7 +270,7 @@ export function MessageThread({
                                   src={`/api/files/${file.key}`}
                                   alt={file.fileName}
                                   loading="lazy"
-                                  className="mt-1 max-h-48 w-auto max-w-full rounded-md border border-border bg-card object-contain"
+                                  className="mt-1.5 max-h-48 w-auto max-w-full rounded-md bg-card object-contain"
                                 />
                               </a>
                             ) : null}

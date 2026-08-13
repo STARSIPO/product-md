@@ -23,15 +23,18 @@ export function AuthShell({
           href={localePath(locale)}
           className="mx-auto mb-6 flex w-fit items-center gap-2 text-lg font-semibold tracking-tight"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
-            <LayoutGrid className="h-4 w-4" aria-hidden />
+          <span className="icon-chip h-9 w-9 bg-primary text-primary-foreground">
+            <LayoutGrid className="h-[18px] w-[18px]" aria-hidden />
           </span>
           Product.md
         </Link>
 
-        <div className="rounded-xl border border-border bg-card p-6 shadow-card sm:p-7">
-          <h1 className="text-h3">{title}</h1>
-          {subtitle ? <p className="mt-1.5 text-sm text-muted-foreground">{subtitle}</p> : null}
+        {/* A considered surface rather than a bordered rectangle: the card is separated
+            from the warm page background by elevation, and `shadow-pop` gives the one
+            thing on the screen a little more presence than a list item would get. */}
+        <div className="rounded-lg bg-card p-6 shadow-pop sm:p-7">
+          <h1 className="text-h2">{title}</h1>
+          {subtitle ? <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p> : null}
           <div className="mt-6">{children}</div>
         </div>
 

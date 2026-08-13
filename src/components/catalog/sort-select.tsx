@@ -35,7 +35,7 @@ export function SortSelect({
       ref={formRef}
       method="get"
       action={action}
-      className={cn('flex items-center gap-2', className)}
+      className={cn('flex min-w-0 items-center gap-2', className)}
     >
       {Object.entries(hidden).map(([name, hiddenValue]) => (
         <input key={name} type="hidden" name={name} value={hiddenValue} />
@@ -62,7 +62,7 @@ export function SortSelect({
 
       <button
         type="submit"
-        className="sr-only focus:not-sr-only focus:inline-flex focus:min-h-[42px] focus:items-center focus:rounded-md focus:border focus:border-input focus:bg-card focus:px-3 focus:text-sm"
+        className="sr-only focus:not-sr-only focus:inline-flex focus:min-h-[44px] focus:items-center focus:rounded-md focus:border focus:border-input focus:bg-card focus:px-3 focus:text-sm"
       >
         {t.filters.apply}
       </button>

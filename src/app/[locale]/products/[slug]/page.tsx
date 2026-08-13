@@ -182,7 +182,9 @@ export default async function ProductPage({
   }
 
   return (
-    <div className="container py-6 pb-28 md:pb-10">
+    // pb-28 reserves the mobile action bar; the layout's `.pb-safe-nav` handles the
+    // bottom navigation underneath it.
+    <div className="container py-8 pb-28 md:py-10 md:pb-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
@@ -201,7 +203,7 @@ export default async function ProductPage({
         ]}
       />
 
-      <div className="mt-4 flex flex-wrap items-start gap-3">
+      <div className="mt-4 flex min-w-0 flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge variant={AVAILABILITY_VARIANT[product.availability] ?? 'neutral'} size="sm">
@@ -245,9 +247,9 @@ export default async function ProductPage({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6">
         {/* ------------------------------------------------------------ main */}
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-4">
           <ProductGallery
             photos={product.photos.map((photo) => ({
               id: photo.id,
@@ -265,11 +267,13 @@ export default async function ProductPage({
 
           {specs.length > 0 ? (
             <Section id="attributes" title={t.product.attributes}>
-              <dl className="divide-y divide-border rounded-lg border border-border bg-card">
+              {/* Row rules stay: this is a spec sheet, and a buyer reads it by scanning
+                  down one column. The box around it is what had to go. */}
+              <dl className="divide-y divide-border">
                 {specs.map((spec) => (
                   <div
                     key={spec.label}
-                    className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-2.5"
+                    className="flex flex-wrap items-baseline justify-between gap-2 py-2.5 first:pt-0 last:pb-0"
                   >
                     <dt className="text-sm text-muted-foreground">{spec.label}</dt>
                     <dd className="text-sm font-medium">{spec.value}</dd>
@@ -329,14 +333,16 @@ export default async function ProductPage({
               {/* Only APPROVED + isPublic rows reach here (PRODUCT_DETAIL_INCLUDE), and
                   the file itself is never linked — the type and validity are the whole
                   public surface of a verified document. */}
-              <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+              <ul className="divide-y divide-border">
                 {product.documents.map((link) => (
                   <li
                     key={link.document.id}
-                    className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
+                    className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
                   >
-                    <span className="inline-flex items-center gap-2 text-sm font-medium">
-                      <FileCheck2 className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                    <span className="inline-flex items-center gap-2.5 text-sm font-medium">
+                      <span className="icon-chip h-9 w-9" aria-hidden>
+                        <FileCheck2 className="h-4 w-4" />
+                      </span>
                       {t.verification.docTypes[
                         link.document.type as keyof typeof t.verification.docTypes
                       ] ?? link.document.type}
@@ -355,15 +361,17 @@ export default async function ProductPage({
           ) : null}
 
           <Section id="supplier" title={t.product.supplier}>
-            <div className="rounded-lg border border-border bg-card p-4">
-              <div className="flex gap-3.5">
+            {/* The Section is already the surface — a second box here was the clearest
+                case of the nested-outline look on the page. */}
+            <div>
+              <div className="flex gap-4">
                 <Avatar
                   src={product.company.logoKey ?? undefined}
                   name={product.company.displayName}
                   size="lg"
                 />
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-medium">
+                  <h3 className="text-base font-semibold">
                     <Link href={supplierPath} className="hover:text-primary">
                       {product.company.displayName}
                     </Link>
@@ -391,19 +399,19 @@ export default async function ProductPage({
               </div>
 
               <VerificationBadges
-                className="mt-3"
+                className="mt-4"
                 badges={product.company.badges}
                 t={t}
                 size="sm"
               />
 
               {product.company.description ? (
-                <p className="clamp-3 mt-3 text-sm text-muted-foreground">
+                <p className="clamp-3 mt-4 text-sm text-muted-foreground">
                   {product.company.description}
                 </p>
               ) : null}
 
-              <dl className="mt-3 space-y-2 text-sm">
+              <dl className="mt-4 space-y-2.5 text-sm">
                 {product.company.minOrderBani > 0 ? (
                   <Fact
                     icon={<Package className="h-4 w-4" aria-hidden />}
@@ -438,14 +446,16 @@ export default async function ProductPage({
 
           <Section id="reviews" title={t.product.reviews}>
             {reviews.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+              <p className="surface-muted px-4 py-8 text-center text-sm text-muted-foreground">
                 {t.review.emptyText}
               </p>
             ) : (
               <>
-                <ul className="space-y-3">
+                {/* Inside the reviews surface the entries are separated by hairlines,
+                    not by three more little cards. */}
+                <ul className="divide-y divide-border">
                   {reviews.map((review) => (
-                    <li key={review.id} className="rounded-lg border border-border bg-card p-4">
+                    <li key={review.id} className="py-4 first:pt-0 last:pb-0">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-sm font-medium">
                           {review.authorCompany.displayName}
@@ -476,7 +486,7 @@ export default async function ProductPage({
                 </ul>
                 <Link
                   href={`${supplierPath}?tab=reviews`}
-                  className="mt-3 inline-flex text-sm font-medium text-primary hover:text-primary-hover"
+                  className="mt-4 inline-flex min-h-[44px] items-center text-sm font-medium text-primary hover:text-primary-hover"
                 >
                   {t.common.showAll}
                 </Link>
@@ -486,16 +496,21 @@ export default async function ProductPage({
         </div>
 
         {/* ----------------------------------------------------------- aside */}
-        <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-          <div className="rounded-lg border border-border bg-card p-4 shadow-card">
-            <p className="tnum text-h2 leading-none">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
+          <div className="surface p-5">
+            {/*
+              The price is the one thing on this page that must not be mistaken for a
+              detail row, so it sits in its own tinted block at heading scale. Primary
+              on primary-soft is 5.7:1 — the emphasis costs nothing in legibility.
+            */}
+            {/* h2 on a phone: `formatMoney` returns a non-breaking string, so a large
+                amount at h1 would push the 320px column into horizontal scroll. */}
+            <p className="tnum rounded-md bg-primary-soft px-4 py-3.5 text-h2 leading-none text-primary sm:text-h1">
               {formatMoney(product.priceBani, locale)}
-              <span className="ml-1.5 text-base font-normal text-muted-foreground">
-                / {unitLabel}
-              </span>
+              <span className="ml-1.5 text-base font-normal">/ {unitLabel}</span>
             </p>
 
-            <dl className="mt-4 space-y-2 text-sm">
+            <dl className="mt-5 space-y-2.5 text-sm">
               <Fact
                 icon={<Package className="h-4 w-4" aria-hidden />}
                 label={t.product.minOrder}
@@ -523,9 +538,9 @@ export default async function ProductPage({
             </dl>
 
             {isOwner ? (
-              <p className="mt-4 text-sm text-muted-foreground">{t.errors.ownProduct}</p>
+              <p className="mt-5 text-sm text-muted-foreground">{t.errors.ownProduct}</p>
             ) : (
-              <div className="mt-4 space-y-2">
+              <div className="mt-5 space-y-2">
                 <Link
                   href={contactHref}
                   className={buttonVariants({ size: 'lg', fullWidth: true })}
@@ -561,10 +576,10 @@ export default async function ProductPage({
       {/* ------------------------------------------------------------ similar */}
       {similar.length > 0 ? (
         <section className="mt-10" aria-labelledby="similar-title">
-          <h2 id="similar-title" className="text-h3">
+          <h2 id="similar-title" className="text-h2">
             {t.product.similarProducts}
           </h2>
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
             {similar.map((item) => (
               <ProductCard
                 key={item.id}
@@ -604,7 +619,7 @@ export default async function ProductPage({
       {!isOwner ? (
         // Sits directly on top of the mobile bottom navigation (56px + the iOS inset).
         <div className="fixed inset-x-0 bottom-[calc(3.5rem_+_env(safe-area-inset-bottom,0px))] z-30 border-t border-border bg-card/95 px-4 py-2.5 backdrop-blur md:hidden">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <p className="tnum min-w-0 flex-1 text-base font-semibold leading-tight">
               {formatMoney(product.priceBani, locale)}
               <span className="ml-1 text-caption font-normal text-muted-foreground">
@@ -624,6 +639,11 @@ export default async function ProductPage({
 
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Every content block on this page is one raised surface. The main column stacks them
+ * with a single gap, so the rhythm of the page is set in one place and no section has
+ * to draw an outline to say where it begins.
+ */
 function Section({
   id,
   title,
@@ -634,11 +654,11 @@ function Section({
   children: ReactNode
 }) {
   return (
-    <section className="mt-8" aria-labelledby={`${id}-title`}>
+    <section className="surface min-w-0 p-5" aria-labelledby={`${id}-title`}>
       <h2 id={`${id}-title`} className="text-h3">
         {title}
       </h2>
-      <div className="mt-3">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
   )
 }

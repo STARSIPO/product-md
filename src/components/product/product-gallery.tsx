@@ -27,7 +27,7 @@ export function ProductGallery({ photos, title }: { photos: readonly GalleryPhot
 
   if (photos.length === 0) {
     return (
-      <div className="grid aspect-[4/3] w-full place-items-center rounded-lg border border-border bg-muted text-muted-foreground">
+      <div className="surface grid aspect-[4/3] w-full place-items-center bg-muted text-muted-foreground">
         <Package className="h-10 w-10" aria-hidden />
         <span className="mt-2 text-sm">{t.product.noPhoto}</span>
       </div>
@@ -41,8 +41,8 @@ export function ProductGallery({ photos, title }: { photos: readonly GalleryPhot
   const go = (next: number) => setIndex((next + photos.length) % photos.length)
 
   return (
-    <div>
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-border bg-muted">
+    <div className="min-w-0">
+      <div className="surface relative aspect-[4/3] w-full overflow-hidden bg-muted">
         <Image
           key={current.id}
           src={current.key}
@@ -59,7 +59,7 @@ export function ProductGallery({ photos, title }: { photos: readonly GalleryPhot
               type="button"
               onClick={() => go(safeIndex - 1)}
               aria-label={t.a11y.previousPage}
-              className="absolute left-2 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-border bg-card/90 text-foreground shadow-card backdrop-blur transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="absolute left-2 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-card/90 text-foreground shadow-pop backdrop-blur transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <ChevronLeft className="h-5 w-5" aria-hidden />
             </button>
@@ -67,7 +67,7 @@ export function ProductGallery({ photos, title }: { photos: readonly GalleryPhot
               type="button"
               onClick={() => go(safeIndex + 1)}
               aria-label={t.a11y.nextPage}
-              className="absolute right-2 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-border bg-card/90 text-foreground shadow-card backdrop-blur transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="absolute right-2 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-card/90 text-foreground shadow-pop backdrop-blur transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <ChevronRight className="h-5 w-5" aria-hidden />
             </button>
@@ -85,7 +85,7 @@ export function ProductGallery({ photos, title }: { photos: readonly GalleryPhot
       {photos.length > 1 ? (
         <ul
           aria-label={t.product.gallery}
-          className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1"
+          className="no-scrollbar mt-3 flex min-w-0 gap-2 overflow-x-auto pb-1"
         >
           {photos.map((photo, position) => (
             <li key={photo.id}>
@@ -97,11 +97,13 @@ export function ProductGallery({ photos, title }: { photos: readonly GalleryPhot
                   current: position + 1,
                   total: photos.length,
                 })}
+                // The only outline left in the gallery marks the *selected* thumbnail —
+                // a 2px transparent border on the rest keeps the row from shifting.
                 className={cn(
-                  'relative h-16 w-20 shrink-0 overflow-hidden rounded-md border bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                  'relative h-16 w-20 shrink-0 overflow-hidden rounded-md border-2 bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   position === safeIndex
-                    ? 'border-primary ring-1 ring-primary'
-                    : 'border-border hover:border-muted-foreground/40',
+                    ? 'border-primary'
+                    : 'border-transparent opacity-75 hover:opacity-100',
                 )}
               >
                 <Image

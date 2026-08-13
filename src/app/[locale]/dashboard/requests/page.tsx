@@ -4,7 +4,7 @@ import { getDictionary, resolveLocale } from '@/lib/i18n'
 import { localePath } from '@/lib/i18n/config'
 import { formatDateShort, formatNumber } from '@/lib/i18n/format'
 import { formatQuantity } from '@/lib/money'
-import { parsePage, cn } from '@/lib/utils'
+import { parsePage } from '@/lib/utils'
 import { REQUEST_STATUSES } from '@/lib/constants'
 import { requireBuyer } from '@/server/auth/guards'
 import { db } from '@/server/db'
@@ -23,6 +23,7 @@ import {
   Table,
   TableScroll,
 } from '@/components/ui'
+import { SectionRail, type SectionRailItem } from '@/components/dashboard/section-rail'
 
 /**
  * "My purchase requests".
@@ -71,8 +72,19 @@ export default async function DashboardRequestsPage({
 
   const base = localePath(locale, 'dashboard', 'requests')
 
+  const filters: SectionRailItem[] = [
+    { key: 'all', href: base, label: t.common.all, count: allCount, active: !status },
+    ...FILTERS.map((value) => ({
+      key: value,
+      href: `${base}?status=${value}`,
+      label: requestStatus[value] ?? value,
+      count: counts.get(value) ?? 0,
+      active: status === value,
+    })),
+  ]
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-h1">{t.dashboard.myRequests}</h1>
         <Link href={localePath(locale, 'requests', 'new')} className={buttonVariants()}>
@@ -80,23 +92,7 @@ export default async function DashboardRequestsPage({
         </Link>
       </div>
 
-      <nav
-        aria-label={t.common.filters}
-        className="no-scrollbar -mx-4 overflow-x-auto border-b border-border px-4"
-      >
-        <ul className="flex min-w-max items-end gap-1">
-          <FilterTab href={base} label={t.common.all} count={allCount} active={!status} />
-          {FILTERS.map((value) => (
-            <FilterTab
-              key={value}
-              href={`${base}?status=${value}`}
-              label={requestStatus[value] ?? value}
-              count={counts.get(value) ?? 0}
-              active={status === value}
-            />
-          ))}
-        </ul>
-      </nav>
+      <SectionRail label={t.common.filters} items={filters} />
 
       {items.length === 0 ? (
         <Card>
@@ -181,7 +177,7 @@ export default async function DashboardRequestsPage({
           <ul className="space-y-3 md:hidden">
             {items.map((request) => (
               <li key={request.id}>
-                <Card className="p-3.5">
+                <Card className="p-4">
                   <Link
                     href={localePath(locale, 'requests', request.slug)}
                     className="block text-sm font-medium leading-snug"
@@ -217,7 +213,7 @@ export default async function DashboardRequestsPage({
                     </div>
                   </dl>
 
-                  <div className="mt-2 flex flex-wrap gap-1 border-t border-border pt-2">
+                  <div className="mt-2 flex flex-wrap gap-1">
                     <RowLink
                       href={localePath(locale, 'requests', request.slug, 'offers')}
                       label={t.offer.receivedOffers}
@@ -250,37 +246,6 @@ export default async function DashboardRequestsPage({
         </>
       )}
     </div>
-  )
-}
-
-function FilterTab({
-  href,
-  label,
-  count,
-  active,
-}: {
-  href: string
-  label: string
-  count: number
-  active: boolean
-}) {
-  return (
-    <li>
-      <Link
-        href={href}
-        aria-current={active ? 'page' : undefined}
-        className={cn(
-          'relative inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap rounded-t-sm px-3 pb-2.5 pt-2 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-          "after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:content-['']",
-          active
-            ? 'font-semibold text-primary after:bg-primary'
-            : 'font-medium text-muted-foreground after:bg-transparent hover:text-foreground',
-        )}
-      >
-        {label}
-        <span className="tnum text-caption text-muted-foreground">{count}</span>
-      </Link>
-    </li>
   )
 }
 

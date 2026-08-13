@@ -99,7 +99,10 @@ export async function NotificationPreferences({
       {/* --------------------------------------------------------- phone: cards */}
       <ul className="space-y-2 md:hidden">
         {NOTIFICATION_TYPES.map((type) => (
-          <li key={type} className="rounded-md border border-border px-3 py-2.5">
+          // An inset block, not another outlined card: this list already lives inside
+          // one, and a box inside a box is what made the settings page feel like a form
+          // builder rather than a product.
+          <li key={type} className="surface-muted rounded-md px-3 py-2.5">
             <fieldset className="min-w-0 border-0 p-0">
               <legend className="text-sm font-medium">{t.notifications.types[type]}</legend>
               <div className="mt-1 flex flex-wrap gap-x-3">

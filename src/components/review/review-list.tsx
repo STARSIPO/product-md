@@ -51,9 +51,9 @@ export function ReviewList({
   }
 
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-3 md:space-y-4">
       {reviews.map((review) => (
-        <li key={review.id} className="rounded-lg border border-border bg-card p-4">
+        <li key={review.id} className="surface p-4 md:p-5">
           <div className="flex items-start gap-3">
             <Avatar
               src={review.author.logoKey ?? undefined}
@@ -113,7 +113,7 @@ export function ReviewList({
               ) : null}
 
               {review.reply ? (
-                <div className="mt-3 rounded-md border-l-2 border-primary bg-muted/60 px-3 py-2">
+                <div className="surface-muted mt-3 rounded-md border-l-2 border-primary px-3.5 py-2.5">
                   <p className="flex items-center gap-1.5 text-caption font-medium text-muted-foreground">
                     <MessageSquareQuote className="h-3.5 w-3.5" aria-hidden />
                     {t.review.replyTitle}

@@ -19,8 +19,8 @@ export function HomeSearch() {
   }
 
   return (
-    <form onSubmit={submit} role="search" className="flex flex-col gap-2 sm:flex-row">
-      <div className="relative flex-1">
+    <form onSubmit={submit} role="search" className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+      <div className="relative min-w-0 flex-1">
         <label htmlFor="home-search" className="sr-only">
           {t.home.searchLabel}
         </label>
@@ -34,10 +34,10 @@ export function HomeSearch() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={t.nav.searchPlaceholder}
-          className="h-12 w-full rounded-md border border-input bg-background pl-11 pr-4 text-base outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="h-12 w-full rounded-md border border-input bg-card pl-11 pr-4 text-base shadow-card outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         />
       </div>
-      <Button type="submit" size="lg" className="sm:w-auto">
+      <Button type="submit" size="lg" className="sm:h-12 sm:min-h-0 sm:w-auto sm:px-8">
         {t.common.search}
       </Button>
     </form>

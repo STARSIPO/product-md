@@ -169,17 +169,21 @@ export function OfferComparison({
     })
   }
 
-  const columns = [
-    t.offer.colSupplier,
-    t.offer.colUnitPrice,
-    t.offer.colTotal,
-    t.offer.colDelivery,
-    t.offer.colRating,
-    t.offer.colDeliveryDate,
-    t.offer.colDocuments,
-    t.offer.colDistance,
-    t.offer.colResponseTime,
-    t.common.actions,
+  /**
+   * Money and distance are right-aligned so the digits line up column-wise — with
+   * `tnum` that turns nine unrelated numbers into something a buyer can scan down.
+   */
+  const columns: { label: string; numeric?: boolean }[] = [
+    { label: t.offer.colSupplier },
+    { label: t.offer.colUnitPrice, numeric: true },
+    { label: t.offer.colTotal, numeric: true },
+    { label: t.offer.colDelivery, numeric: true },
+    { label: t.offer.colRating },
+    { label: t.offer.colDeliveryDate },
+    { label: t.offer.colDocuments },
+    { label: t.offer.colDistance, numeric: true },
+    { label: t.offer.colResponseTime, numeric: true },
+    { label: t.common.actions },
   ]
 
   return (
@@ -194,101 +198,130 @@ export function OfferComparison({
 
       {/* ------------------------------------------------------- mobile cards */}
       <ul className="space-y-3 md:hidden">
-        {offers.map((offer) => (
-          <li
-            key={offer.id}
-            className="rounded-lg border border-border bg-card p-4 shadow-card"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
-                <Link
-                  href={href('suppliers', offer.supplier.slug)}
-                  className="text-base font-medium hover:text-primary"
-                >
-                  {offer.supplier.displayName}
-                </Link>
-                {offer.supplier.localityName ? (
-                  <p className="text-caption text-muted-foreground">
-                    {offer.supplier.localityName}
-                  </p>
-                ) : null}
+        {offers.map((offer) => {
+          const isBest = offer.totalBani === bestTotal && offer.status !== 'REJECTED'
+          return (
+            <li
+              key={offer.id}
+              // The winning quote is the one fact this screen exists to surface, so it is
+              // the single place a ring is allowed: it marks a state, not a box.
+              className={`surface p-4 ${isBest ? 'ring-1 ring-inset ring-success/40' : ''}`}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <Link
+                    href={href('suppliers', offer.supplier.slug)}
+                    className="text-base font-medium hover:text-primary"
+                  >
+                    {offer.supplier.displayName}
+                  </Link>
+                  {offer.supplier.localityName ? (
+                    <p className="text-caption text-muted-foreground">
+                      {offer.supplier.localityName}
+                    </p>
+                  ) : null}
+                </div>
+                <StatusBadge status={offer.status} label={statusLabel(t, offer.status)} size="sm" />
               </div>
-              <StatusBadge status={offer.status} label={statusLabel(t, offer.status)} size="sm" />
-            </div>
 
-            {offer.totalBani === bestTotal && offer.status !== 'REJECTED' ? (
-              <Badge variant="success" size="sm" className="mt-2">
-                <Award className="mr-1 h-3 w-3" aria-hidden />
-                {t.offer.bestPrice}
-              </Badge>
-            ) : null}
+              {isBest ? (
+                <Badge variant="success" size="sm" className="mt-2">
+                  <Award className="mr-1 h-3 w-3" aria-hidden />
+                  {t.offer.bestPrice}
+                </Badge>
+              ) : null}
 
-            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <CardField label={t.offer.colUnitPrice}>
-                <span className="tnum font-medium">
-                  {fmt(t.product.pricePerUnit, {
-                    price: formatMoney(offer.priceBani, locale),
-                    unit: t.units[offer.unit as keyof typeof t.units] ?? offer.unit,
-                  })}
+              {/* The total is the number the decision turns on: it gets its own block. */}
+              <div className="surface-muted mt-3 flex items-baseline justify-between gap-3 rounded-md px-3 py-2.5">
+                <span className="text-caption text-muted-foreground">{t.offer.colTotal}</span>
+                <span
+                  className={`tnum text-h3 font-semibold ${isBest ? 'text-success' : ''}`}
+                >
+                  {formatMoney(offer.totalBani, locale)}
                 </span>
-              </CardField>
-              <CardField label={t.offer.colTotal}>
-                <span className="tnum font-semibold">{formatMoney(offer.totalBani, locale)}</span>
-              </CardField>
-              <CardField label={t.offer.colDelivery}>
-                {offer.deliveryPriceBani > 0
-                  ? formatMoney(offer.deliveryPriceBani, locale)
-                  : t.product.deliveryFree}
-              </CardField>
-              <CardField label={t.offer.colDeliveryDate}>
-                {deliveryLabel(t, offer, locale)}
-              </CardField>
-              <CardField label={t.offer.colRating}>
-                <Rating
-                  value={offer.supplier.ratingAvg}
-                  size="sm"
-                  showValue
-                  label={fmt(t.a11y.rating, { value: offer.supplier.ratingAvg.toFixed(1) })}
+              </div>
+
+              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
+                <CardField label={t.offer.colUnitPrice}>
+                  <span className="tnum font-medium">
+                    {fmt(t.product.pricePerUnit, {
+                      price: formatMoney(offer.priceBani, locale),
+                      unit: t.units[offer.unit as keyof typeof t.units] ?? offer.unit,
+                    })}
+                  </span>
+                </CardField>
+                <CardField label={t.offer.colDelivery}>
+                  <span className="tnum">
+                    {offer.deliveryPriceBani > 0
+                      ? formatMoney(offer.deliveryPriceBani, locale)
+                      : t.product.deliveryFree}
+                  </span>
+                </CardField>
+                <CardField label={t.offer.colDeliveryDate}>
+                  {deliveryLabel(t, offer, locale)}
+                </CardField>
+                <CardField label={t.offer.colRating}>
+                  <Rating
+                    value={offer.supplier.ratingAvg}
+                    size="sm"
+                    showValue
+                    label={fmt(t.a11y.rating, { value: offer.supplier.ratingAvg.toFixed(1) })}
+                  />
+                </CardField>
+                <CardField label={t.offer.colDocuments}>
+                  {offer.supplier.hasDocuments ? (
+                    <span className="inline-flex items-center gap-1 text-success">
+                      <Check className="h-4 w-4 shrink-0" aria-hidden />
+                      {t.offer.documentsYes}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">{t.offer.documentsNo}</span>
+                  )}
+                </CardField>
+                <CardField label={t.offer.colDistance}>
+                  <span className="tnum">
+                    {offer.distanceKm === null
+                      ? t.offer.distanceUnknown
+                      : fmt(t.offer.distanceKm, { km: Math.round(offer.distanceKm) })}
+                  </span>
+                </CardField>
+                <CardField label={t.offer.colResponseTime}>
+                  <span className="tnum">
+                    {responseLabel(t, fmt, offer.supplier.avgResponseMinutes)}
+                  </span>
+                </CardField>
+              </dl>
+
+              <OfferExtras offer={offer} />
+
+              <div className="mt-4">
+                <RowActions
+                  offer={offer}
+                  decided={decided}
+                  busy={pending && pendingId === offer.id}
+                  onShortlist={() => toggleShortlist(offer)}
+                  onReject={() => setRejecting(offer)}
+                  onAccept={() => setConfirming(offer)}
                 />
-              </CardField>
-              <CardField label={t.offer.colDocuments}>
-                {offer.supplier.hasDocuments ? t.offer.documentsYes : t.offer.documentsNo}
-              </CardField>
-              <CardField label={t.offer.colDistance}>
-                {offer.distanceKm === null
-                  ? t.offer.distanceUnknown
-                  : fmt(t.offer.distanceKm, { km: Math.round(offer.distanceKm) })}
-              </CardField>
-              <CardField label={t.offer.colResponseTime}>
-                {responseLabel(t, fmt, offer.supplier.avgResponseMinutes)}
-              </CardField>
-            </dl>
-
-            <OfferExtras offer={offer} />
-
-            <div className="mt-4">
-              <RowActions
-                offer={offer}
-                decided={decided}
-                busy={pending && pendingId === offer.id}
-                onShortlist={() => toggleShortlist(offer)}
-                onReject={() => setRejecting(offer)}
-                onAccept={() => setConfirming(offer)}
-              />
-            </div>
-          </li>
-        ))}
+              </div>
+            </li>
+          )
+        })}
       </ul>
 
       {/* ------------------------------------------------------------- table */}
-      <TableScroll className="hidden rounded-lg border border-border bg-card md:block">
+      <TableScroll className="surface hidden md:block">
         <Table>
           <caption className="sr-only">{t.offer.compareTitle}</caption>
           <THead>
             <TR>
               {columns.map((column) => (
-                <TH key={column} scope="col">
-                  {column}
+                <TH
+                  key={column.label}
+                  scope="col"
+                  className={column.numeric ? 'text-right' : undefined}
+                >
+                  {column.label}
                 </TH>
               ))}
             </TR>
@@ -297,11 +330,7 @@ export function OfferComparison({
             {offers.map((offer) => {
               const isBest = offer.totalBani === bestTotal && offer.status !== 'REJECTED'
               return (
-                <TR
-                  key={offer.id}
-                  interactive
-                  className={isBest ? 'bg-success-soft/40' : undefined}
-                >
+                <TR key={offer.id} interactive className={isBest ? 'bg-success-soft/50' : undefined}>
                   <TH scope="row" className="max-w-[220px] whitespace-normal text-foreground">
                     <Link
                       href={href('suppliers', offer.supplier.slug)}
@@ -329,7 +358,7 @@ export function OfferComparison({
                     ) : null}
                   </TH>
 
-                  <TD className="tnum whitespace-nowrap">
+                  <TD className="tnum whitespace-nowrap text-right">
                     {formatMoney(offer.priceBani, locale)}
                     <span className="block text-caption text-muted-foreground">
                       {formatQuantity(
@@ -340,11 +369,15 @@ export function OfferComparison({
                     </span>
                   </TD>
 
-                  <TD className="tnum whitespace-nowrap font-semibold">
+                  <TD
+                    className={`tnum whitespace-nowrap text-right text-base font-semibold ${
+                      isBest ? 'text-success' : ''
+                    }`}
+                  >
                     {formatMoney(offer.totalBani, locale)}
                   </TD>
 
-                  <TD className="tnum whitespace-nowrap">
+                  <TD className="tnum whitespace-nowrap text-right">
                     {offer.deliveryPriceBani > 0
                       ? formatMoney(offer.deliveryPriceBani, locale)
                       : t.product.deliveryFree}
@@ -367,7 +400,7 @@ export function OfferComparison({
                   <TD>
                     {offer.supplier.hasDocuments ? (
                       <span className="inline-flex items-center gap-1 text-success">
-                        <Check className="h-4 w-4" aria-hidden />
+                        <Check className="h-4 w-4 shrink-0" aria-hidden />
                         {t.offer.documentsYes}
                       </span>
                     ) : (
@@ -375,13 +408,13 @@ export function OfferComparison({
                     )}
                   </TD>
 
-                  <TD className="tnum whitespace-nowrap">
+                  <TD className="tnum whitespace-nowrap text-right">
                     {offer.distanceKm === null
                       ? t.offer.distanceUnknown
                       : fmt(t.offer.distanceKm, { km: Math.round(offer.distanceKm) })}
                   </TD>
 
-                  <TD className="tnum whitespace-nowrap">
+                  <TD className="tnum whitespace-nowrap text-right">
                     {responseLabel(t, fmt, offer.supplier.avgResponseMinutes)}
                   </TD>
 
@@ -390,6 +423,7 @@ export function OfferComparison({
                       offer={offer}
                       decided={decided}
                       busy={pending && pendingId === offer.id}
+                      compact
                       onShortlist={() => toggleShortlist(offer)}
                       onReject={() => setRejecting(offer)}
                       onAccept={() => setConfirming(offer)}
@@ -403,11 +437,11 @@ export function OfferComparison({
       </TableScroll>
 
       {/* Details that do not fit a column but decide a purchase all the same. */}
-      <ul className="hidden space-y-2 md:block">
+      <ul className="hidden space-y-3 md:block">
         {offers
           .filter((offer) => offer.comment || offer.attachmentName || offer.alternativeProduct)
           .map((offer) => (
-            <li key={offer.id} className="rounded-md border border-border bg-card px-4 py-3">
+            <li key={offer.id} className="surface p-4">
               <p className="text-sm font-medium">{offer.supplier.displayName}</p>
               <OfferExtras offer={offer} />
             </li>
@@ -461,8 +495,11 @@ export function OfferComparison({
         <p>{t.offer.rejectConfirmText}</p>
       </Dialog>
 
-      <p className="text-caption text-muted-foreground">
-        <Link href={href('requests', requestSlug)} className="hover:text-foreground">
+      <p>
+        <Link
+          href={href('requests', requestSlug)}
+          className="inline-flex min-h-[44px] items-center text-caption text-muted-foreground hover:text-foreground"
+        >
           {t.request.single}
         </Link>
       </p>
@@ -484,8 +521,10 @@ function OfferExtras({ offer }: { offer: ComparisonOffer }) {
 
   if (!offer.comment && !offer.attachmentName && !offer.alternativeProduct) return null
 
+  // An inset block rather than a rule: the free-text notes are secondary to the figures
+  // above them, and reading as a recessed panel says that without drawing a line.
   return (
-    <div className="mt-3 space-y-2 border-t border-border pt-3">
+    <div className="surface-muted mt-3 space-y-2 rounded-md p-3">
       {offer.comment ? (
         <p className="whitespace-pre-line text-sm text-muted-foreground">{offer.comment}</p>
       ) : null}
@@ -522,6 +561,7 @@ function RowActions({
   offer,
   decided,
   busy,
+  compact = false,
   onShortlist,
   onReject,
   onAccept,
@@ -529,11 +569,14 @@ function RowActions({
   offer: ComparisonOffer
   decided: boolean
   busy: boolean
+  /** Table rows use the 38px button; the mobile card keeps the 44px touch target. */
+  compact?: boolean
   onShortlist: () => void
   onReject: () => void
   onAccept: () => void
 }) {
   const { t } = useI18n()
+  const size = compact ? 'sm' : 'md'
 
   if (offer.status === 'ACCEPTED') {
     return <span className="text-caption font-medium text-success">{t.offer.accepted}</span>
@@ -553,12 +596,12 @@ function RowActions({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <Button size="sm" loading={busy} onClick={onAccept}>
+    <div className="flex flex-wrap items-center gap-2">
+      <Button size={size} loading={busy} onClick={onAccept}>
         {t.offer.accept}
       </Button>
       <Button
-        size="sm"
+        size={size}
         variant="outline"
         onClick={onShortlist}
         disabled={busy}
@@ -571,7 +614,7 @@ function RowActions({
         />
         {offer.status === 'SHORTLISTED' ? t.offer.shortlisted : t.offer.shortlist}
       </Button>
-      <Button size="sm" variant="ghost" onClick={onReject} disabled={busy}>
+      <Button size={size} variant="ghost" onClick={onReject} disabled={busy}>
         <X className="mr-1 h-3.5 w-3.5" aria-hidden />
         {t.offer.reject}
       </Button>

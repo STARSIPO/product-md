@@ -88,7 +88,7 @@ export default async function ModerationProductsPage({
     if (!product) {
       return (
         <EmptyState
-          className="rounded-lg border border-border bg-card"
+          className="surface"
           title={t.states.notFoundTitle}
           description={t.states.notFoundText}
           action={
@@ -138,9 +138,9 @@ export default async function ModerationProductsPage({
           {t.moderation.backToList}
         </Link>
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
           {/* ------------------------------------------- submitted material */}
-          <article className="min-w-0 space-y-4 rounded-lg border border-border bg-card p-4">
+          <article className="surface min-w-0 space-y-4 p-5">
             <header>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge
@@ -170,7 +170,7 @@ export default async function ModerationProductsPage({
             ) : null}
 
             {details.some((row) => row.value) ? (
-              <dl className="grid gap-x-4 gap-y-2 border-t border-border pt-3 sm:grid-cols-2">
+              <dl className="grid gap-x-4 gap-y-2 pt-1 sm:grid-cols-2">
                 {details
                   .filter((row) => row.value)
                   .map((row) => (
@@ -183,7 +183,7 @@ export default async function ModerationProductsPage({
             ) : null}
 
             {product.photos.length > 0 ? (
-              <ul className="flex flex-wrap gap-2 border-t border-border pt-3">
+              <ul className="flex flex-wrap gap-2 pt-1">
                 {product.photos.map((photo) => (
                   <li key={photo.key}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -199,7 +199,7 @@ export default async function ModerationProductsPage({
             ) : null}
 
             {product.moderatorComment ? (
-              <p className="rounded-md border border-border bg-muted p-3 text-sm">
+              <p className="surface-muted rounded-md p-3.5 text-sm">
                 <span className="block text-caption text-muted-foreground">
                   {t.moderation.comment}
                 </span>
@@ -212,7 +212,7 @@ export default async function ModerationProductsPage({
           <div className="space-y-4">
             <DecisionPanel kind="product" entityId={product.id} />
 
-            <section className="rounded-lg border border-border bg-card p-4">
+            <section className="surface p-5">
               <h2 className="text-h3">{t.moderation.decisionLog}</h2>
               <ol className="mt-2 space-y-2">
                 {history.items.length === 0 ? (
@@ -331,7 +331,7 @@ export default async function ModerationProductsPage({
 
         {result.items.length === 0 ? (
           <EmptyState
-            className="rounded-lg border border-border bg-card"
+            className="surface"
             icon={<PackageSearch aria-hidden />}
             title={t.moderation.empty}
             description={t.moderation.emptyText}

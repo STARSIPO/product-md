@@ -59,8 +59,18 @@ export default async function DealDocumentPage({
         <p className="w-full text-caption text-muted-foreground">{t.deal.documentHint}</p>
       </div>
 
-      <article className="rounded-lg border border-border bg-card p-6 text-foreground print:rounded-none print:border-0 print:p-0">
-        <header className="border-b border-border pb-4">
+      {/*
+        On screen the sheet is a normal elevated card. On paper the elevation and the
+        radius are meaningless, so both are dropped — the internal rules (header, table,
+        signature lines) are part of the document and stay in both media.
+      */}
+      <article className="surface p-6 text-foreground print:rounded-none print:p-0 print:shadow-none">
+        {/*
+          The document's own rules are deliberately darker than `--color-border`. That
+          token became a hairline for screen surfaces; at 235/255 it all but disappears on
+          paper, and this sheet exists to be printed and filed.
+        */}
+        <header className="border-b border-foreground/20 pb-4">
           <h1 className="text-h2">{t.deal.documentTitle}</h1>
           <p className="tnum mt-1 text-sm text-muted-foreground">
             {fmt(t.deal.number, { number: deal.number })} · {t.deal.date}:{' '}
@@ -102,7 +112,7 @@ export default async function DealDocumentPage({
 
           <div className="mt-3 w-full overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm">
-              <thead className="border-b border-border">
+              <thead className="border-b border-foreground/20">
                 <tr>
                   <th scope="col" className="py-2 pr-3 font-semibold">
                     {t.deal.subject}
@@ -118,7 +128,7 @@ export default async function DealDocumentPage({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-foreground/15">
                 <tr>
                   <td className="py-2.5 pr-3">{deal.title}</td>
                   <td className="tnum py-2.5 pr-3">
@@ -139,7 +149,7 @@ export default async function DealDocumentPage({
                 ) : null}
               </tbody>
               <tfoot>
-                <tr className="border-t border-border">
+                <tr className="border-t border-foreground/20">
                   <th scope="row" colSpan={3} className="py-3 pr-3 text-left font-semibold">
                     {t.deal.total}
                   </th>
@@ -195,7 +205,7 @@ export default async function DealDocumentPage({
           </div>
         </section>
 
-        <footer className="mt-8 border-t border-border pt-4">
+        <footer className="mt-8 border-t border-foreground/20 pt-4">
           <p className="text-caption leading-relaxed text-muted-foreground">
             {t.deal.disclaimer}
           </p>

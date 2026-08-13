@@ -26,7 +26,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function 
         aria-invalid={invalid ? true : undefined}
         className={cn(
           controlBaseClasses,
-          'h-[42px] appearance-none py-0 pl-3 pr-10',
+          'h-11 appearance-none py-0 pl-3.5 pr-10',
           invalid && controlInvalidClasses,
           className,
         )}

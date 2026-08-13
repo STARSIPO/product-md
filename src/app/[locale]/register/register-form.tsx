@@ -92,14 +92,14 @@ function EmailRegister({ locale }: { locale: Locale }) {
   if (sentTo) {
     return (
       <div className="text-center">
-        <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary-soft text-primary">
+        <span className="icon-chip mx-auto h-12 w-12">
           <MailCheck className="h-6 w-6" aria-hidden />
         </span>
         <h2 className="mt-4 text-base font-medium">{t.auth.verifyEmailTitle}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           {fmt(t.auth.verifyEmailText, { email: sentTo })}
         </p>
-        <p className="mt-4 rounded-md bg-muted px-3 py-2 text-caption text-muted-foreground">
+        <p className="surface-muted mt-5 rounded-md px-3 py-2.5 text-caption text-muted-foreground">
           {t.auth.devMailerHint}
         </p>
       </div>

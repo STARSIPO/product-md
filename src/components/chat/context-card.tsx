@@ -62,7 +62,7 @@ export function ContextCard({
   return (
     <section
       aria-label={heading}
-      className={className ?? 'rounded-lg border border-border bg-card p-4 shadow-card'}
+      className={className ?? 'surface p-4'}
     >
       <p className="flex items-center gap-1.5 text-caption uppercase tracking-wide text-muted-foreground">
         <Icon className="h-3.5 w-3.5" aria-hidden />
@@ -96,7 +96,7 @@ export function ContextCard({
       </div>
 
       {/* --------------------------------------------------------- the anchor row */}
-      <div className="mt-4 border-t border-border pt-3">
+      <div className="surface-muted mt-4 rounded-md p-3">
         {data.product ? (
           <Link
             href={localePath(locale, 'products', data.product.slug)}

@@ -159,7 +159,7 @@ export function GlobalSearch({
         </label>
         <div className="relative">
           <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground"
             aria-hidden
           />
           <input
@@ -173,7 +173,13 @@ export function GlobalSearch({
             role="combobox"
             aria-expanded={open}
             aria-controls="global-search-results"
-            className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-9 text-base outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            /*
+             * A filled pill rather than an outlined box: it is the one thing in the
+             * header that should read as "start here". The transparent border keeps the
+             * field the same height as the outlined inputs elsewhere and gives focus
+             * something to colour.
+             */
+            className="h-11 w-full rounded-full border border-transparent bg-muted pl-10 pr-10 text-base outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary focus:bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
           {loading ? (
             <Loader2
@@ -187,7 +193,7 @@ export function GlobalSearch({
                 setQuery('')
                 setResults(EMPTY_RESULTS)
               }}
-              className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:text-foreground"
+              className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
               aria-label={t.common.clear}
             >
               <X className="h-4 w-4" aria-hidden />
@@ -201,7 +207,7 @@ export function GlobalSearch({
           id="global-search-results"
           role="listbox"
           aria-label={t.common.search}
-          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] animate-slide-up overflow-y-auto rounded-lg border border-border bg-card p-2 shadow-pop"
+          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] animate-slide-up overflow-y-auto rounded-lg bg-card p-2 shadow-pop"
         >
           {showEmptyState ? (
             <>
@@ -243,7 +249,7 @@ export function GlobalSearch({
                       key={category.id}
                       href={href('category', category.slug)}
                       onClick={() => setOpen(false)}
-                      className="rounded-full border border-border px-3 py-1.5 text-sm transition-colors hover:border-primary hover:bg-primary-soft hover:text-primary"
+                      className="rounded-full bg-muted px-3.5 py-2 text-sm transition-colors hover:bg-primary-soft hover:text-primary"
                     >
                       {category.name}
                     </Link>
@@ -327,16 +333,20 @@ export function GlobalSearch({
                   rememberQuery(query.trim())
                   setOpen(false)
                 }}
-                className="mt-1 block rounded-md border-t border-border px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary-soft"
+                className="mt-1.5 block rounded-md bg-primary-soft/50 px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary-soft"
               >
                 {fmt(t.search.seeAllResults, { query: query.trim() })}
               </Link>
             </>
           ) : loading ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">{t.common.loading}</p>
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+              {t.common.loading}
+            </p>
           ) : (
             <div className="px-3 py-6 text-center">
-              <p className="text-sm font-medium">{fmt(t.search.noResults, { query: query.trim() })}</p>
+              <p className="text-sm font-medium">
+                {fmt(t.search.noResults, { query: query.trim() })}
+              </p>
               <p className="mt-1 text-caption text-muted-foreground">{t.search.noResultsHint}</p>
             </div>
           )}
@@ -391,9 +401,7 @@ function Row({
         'flex items-center gap-2.5 rounded-md px-2 py-2 transition-colors hover:bg-muted',
       )}
     >
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
-        {icon}
-      </span>
+      <span className="icon-chip h-9 w-9">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{title}</span>
         {subtitle ? (

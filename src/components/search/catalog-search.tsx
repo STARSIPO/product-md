@@ -35,13 +35,17 @@ export function CatalogSearch({
     if (categorySlug) params.set('category', categorySlug)
 
     router.push(
-      trimmed ? `${href('search')}?${params.toString()}` : `${href('products')}?${params.toString()}`,
+      trimmed
+        ? `${href('search')}?${params.toString()}`
+        : `${href('products')}?${params.toString()}`,
     )
   }
 
   return (
-    <form onSubmit={submit} role="search" className="flex flex-col gap-2 sm:flex-row">
-      <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:rounded-md sm:border sm:border-input sm:bg-background sm:focus-within:border-primary">
+    <form onSubmit={submit} role="search" className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+      {/* One field made of two controls: the group carries the outline, and the pieces
+          inside it are separated by a single internal rule, not by three of them. */}
+      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:gap-0 sm:rounded-md sm:border sm:border-input sm:bg-card sm:shadow-card sm:focus-within:border-primary">
         <label htmlFor="catalog-search-category" className="sr-only">
           {t.filters.category}
         </label>
@@ -49,7 +53,7 @@ export function CatalogSearch({
           id="catalog-search-category"
           value={categorySlug}
           onChange={(event) => setCategorySlug(event.target.value)}
-          className="h-12 shrink-0 rounded-md border border-input bg-background px-3 text-base outline-none sm:w-52 sm:rounded-none sm:rounded-l-md sm:border-0 sm:border-r sm:border-border"
+          className="h-12 shrink-0 rounded-md border border-input bg-card px-3 text-base outline-none sm:w-52 sm:rounded-none sm:rounded-l-md sm:border-0 sm:border-r sm:border-border sm:bg-transparent"
         >
           <option value="">{t.home.searchAllCategories}</option>
           {categories.map((category) => (
@@ -59,7 +63,7 @@ export function CatalogSearch({
           ))}
         </select>
 
-        <div className="relative flex-1">
+        <div className="relative min-w-0 flex-1">
           <label htmlFor="catalog-search-query" className="sr-only">
             {t.common.search}
           </label>
@@ -73,12 +77,13 @@ export function CatalogSearch({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t.nav.searchPlaceholder}
-            className="h-12 w-full rounded-md border border-input bg-background pl-11 pr-4 text-base outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary sm:rounded-none sm:rounded-r-md sm:border-0 sm:pl-10 sm:focus:border-0"
+            className="h-12 w-full rounded-md border border-input bg-card pl-11 pr-4 text-base outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary sm:rounded-none sm:rounded-r-md sm:border-0 sm:bg-transparent sm:pl-10 sm:focus:border-0"
           />
         </div>
       </div>
 
-      <Button type="submit" size="lg" className="sm:w-auto sm:px-8">
+      {/* Matches the 48px field height from `sm` up so the row reads as one control. */}
+      <Button type="submit" size="lg" className="sm:h-12 sm:min-h-0 sm:w-auto sm:px-8">
         {t.common.search}
       </Button>
     </form>

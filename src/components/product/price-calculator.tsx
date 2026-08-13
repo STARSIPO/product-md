@@ -53,12 +53,12 @@ export function PriceCalculator({
   const belowMin = quantity > 0 && quantity < minOrderQty
 
   return (
-    <section aria-labelledby="price-calculator-title" className="rounded-lg border border-border bg-card p-4">
-      <h2 id="price-calculator-title" className="text-sm font-semibold">
+    <section aria-labelledby="price-calculator-title" className="surface p-5">
+      <h2 id="price-calculator-title" className="text-h3">
         {t.product.calculator}
       </h2>
 
-      <div className="mt-3">
+      <div className="mt-4">
         <label htmlFor={fieldId} className="mb-1.5 block text-sm font-medium">
           {t.product.calcQuantity}, {unitLabel}
         </label>
@@ -106,13 +106,15 @@ export function PriceCalculator({
               : formatMoney(deliveryPriceBani, locale)}
         </Row>
 
-        <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-border pt-2.5">
+        {/* The sum is an inset block rather than a ruled row: one fewer line, and the
+            number a buyer actually acts on stops looking like just another list item. */}
+        <div className="surface-muted mt-3 flex flex-wrap items-baseline justify-between gap-2 rounded-md px-3.5 py-3">
           <dt className="text-sm font-medium">{t.product.calcTotal}</dt>
           <dd className="tnum text-lg font-semibold">{formatMoney(totalBani, locale)}</dd>
         </div>
       </dl>
 
-      <p className="mt-3 text-caption text-muted-foreground">{t.product.calcHint}</p>
+      <p className="mt-4 text-caption text-muted-foreground">{t.product.calcHint}</p>
     </section>
   )
 }

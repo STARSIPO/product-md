@@ -279,7 +279,7 @@ export function CategoryPicker({
                   <button
                     type="button"
                     onClick={() => pick(category)}
-                    className="min-h-[36px] rounded-full border border-border px-3 text-sm transition-colors hover:border-primary hover:bg-primary-soft hover:text-primary"
+                    className="min-h-[36px] rounded-full border border-input px-3 text-sm transition-colors hover:border-primary hover:bg-primary-soft hover:text-primary"
                   >
                     {category.name}
                   </button>
@@ -341,7 +341,7 @@ function CategoryBrowser({
   }, [parentId, locale])
 
   return (
-    <div className="rounded-md border border-border">
+    <div className="rounded-md border border-input">
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
         {parent ? (
           <button

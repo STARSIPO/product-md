@@ -81,10 +81,10 @@ export default async function PricingPage({ params }: { params: { locale: string
   })
 
   return (
-    <div className="container max-w-4xl py-8">
+    <div className="container max-w-4xl py-10">
       <header>
         <h1 className="text-h1">{t.pricing.title}</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">{t.pricing.subtitle}</p>
+        <p className="mt-2 text-base text-muted-foreground">{t.pricing.subtitle}</p>
       </header>
 
       {/* The single most important thing on the page while the flag is off. */}
@@ -99,9 +99,9 @@ export default async function PricingPage({ params }: { params: { locale: string
       </Alert>
 
       {/* ------------------------------------------------------------ the plans */}
-      <div className="mt-6 grid gap-3 md:grid-cols-2">
+      <div className="mt-6 grid gap-3 md:grid-cols-2 md:gap-4">
         <PlanCard
-          icon={<Store className="h-4 w-4" aria-hidden />}
+          icon={<Store className="h-5 w-5" aria-hidden />}
           title={t.pricing.listingTitle}
           price={
             billingEnabled && listing
@@ -112,14 +112,14 @@ export default async function PricingPage({ params }: { params: { locale: string
         />
 
         <PlanCard
-          icon={<ClipboardList className="h-4 w-4" aria-hidden />}
+          icon={<ClipboardList className="h-5 w-5" aria-hidden />}
           title={t.pricing.requestTitle}
           price={t.pricing.requestPrice}
           text={t.pricing.requestText}
         />
 
         <PlanCard
-          icon={<Handshake className="h-4 w-4" aria-hidden />}
+          icon={<Handshake className="h-5 w-5" aria-hidden />}
           title={t.pricing.trialTitle}
           price=""
           text={fmt(t.pricing.trialText, { days: env.SELLER_TRIAL_DAYS })}
@@ -127,7 +127,7 @@ export default async function PricingPage({ params }: { params: { locale: string
 
         {promotionsEnabled ? (
           <PlanCard
-            icon={<Megaphone className="h-4 w-4" aria-hidden />}
+            icon={<Megaphone className="h-5 w-5" aria-hidden />}
             title={t.pricing.promoTitle}
             price=""
             text={t.pricing.promoText}
@@ -136,7 +136,7 @@ export default async function PricingPage({ params }: { params: { locale: string
       </div>
 
       {/* --------------------------------------------------------- live tariffs */}
-      <section className="mt-8" aria-labelledby="pricing-tariffs">
+      <section className="mt-10" aria-labelledby="pricing-tariffs">
         <h2 id="pricing-tariffs" className="text-h3">
           {t.pricing.tariffsTitle}
         </h2>
@@ -146,14 +146,14 @@ export default async function PricingPage({ params }: { params: { locale: string
         ) : null}
 
         {listing === null && promoRows.length === 0 ? (
-          <p className="mt-3 rounded-lg border border-dashed border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+          <p className="surface-muted mt-3 px-4 py-10 text-center text-sm text-muted-foreground">
             {t.pricing.tariffsEmpty}
           </p>
         ) : (
           <Card className="mt-3 overflow-hidden">
             <div className="no-scrollbar w-full overflow-x-auto">
               <table className="w-full border-collapse text-left text-sm">
-                <thead className="border-b border-border bg-muted/60">
+                <thead className="border-b border-border">
                   <tr>
                     <th
                       scope="col"
@@ -216,19 +216,19 @@ export default async function PricingPage({ params }: { params: { locale: string
       </section>
 
       {/* -------------------------------------------------------------- the FAQ */}
-      <section className="mt-8" aria-labelledby="pricing-faq">
+      <section className="mt-10" aria-labelledby="pricing-faq">
         <h2 id="pricing-faq" className="text-h3">
           {t.pricing.faqTitle}
         </h2>
 
-        <dl className="mt-3 space-y-3">
+        <dl className="mt-4 space-y-3">
           <FaqItem question={t.pricing.faq1Q} answer={t.pricing.faq1A} />
           <FaqItem question={t.pricing.faq2Q} answer={t.pricing.faq2A} />
           <FaqItem question={t.pricing.faq3Q} answer={t.pricing.faq3A} />
         </dl>
       </section>
 
-      <div className="mt-8 flex flex-wrap gap-2">
+      <div className="mt-10 flex flex-wrap gap-2">
         <Link href={localePath(locale, 'register')} className={buttonVariants({ size: 'lg' })}>
           {t.home.ctaButton}
         </Link>
@@ -255,15 +255,12 @@ function PlanCard({
   text: string
 }) {
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-2">
-        <span
-          aria-hidden
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary"
-        >
+    <Card className="p-5">
+      <div className="flex items-center gap-3">
+        <span aria-hidden className="icon-chip h-10 w-10">
           {icon}
         </span>
-        <h3 className="text-sm font-semibold">{title}</h3>
+        <h3 className="min-w-0 text-base font-semibold">{title}</h3>
       </div>
       {price ? <p className="mt-2.5 text-lg font-semibold">{price}</p> : null}
       <p className="mt-1 text-sm text-muted-foreground">{text}</p>
@@ -273,7 +270,7 @@ function PlanCard({
 
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="surface p-4">
       <dt className="text-sm font-medium">{question}</dt>
       <dd className="mt-1 text-sm text-muted-foreground">{answer}</dd>
     </div>

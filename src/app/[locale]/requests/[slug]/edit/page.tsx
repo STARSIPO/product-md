@@ -104,7 +104,7 @@ export default async function EditRequestPage({
   }
 
   return (
-    <div className="container max-w-3xl py-8">
+    <div className="container max-w-3xl py-10">
       <h1 className="text-h1">{t.requestForm.editTitle}</h1>
 
       <div className="mt-6">

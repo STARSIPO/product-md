@@ -112,7 +112,7 @@ export default async function AdminUserPage({
       </Link>
 
       {/* --------------------------------------------------------- identity */}
-      <section className="rounded-lg border border-border bg-card p-4">
+      <section className="surface p-5">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-h3">{user.name}</h2>
           <Badge variant="outline" size="sm">
@@ -176,7 +176,7 @@ export default async function AdminUserPage({
           </div>
         </dl>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+        <div className="mt-5 flex flex-wrap items-center gap-2">
           <UserActions
             userId={user.id}
             role={user.role}
@@ -203,7 +203,7 @@ export default async function AdminUserPage({
       {user.companies.length > 0 ? (
         <section>
           <h2 className="text-h3">{t.admin.companies}</h2>
-          <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+          <ul className="surface mt-3 divide-y divide-border">
             {user.companies.map((membership) => (
               <li
                 key={membership.company.id}
@@ -233,7 +233,7 @@ export default async function AdminUserPage({
         {/* --------------------------------------------------- sessions */}
         <section>
           <h2 className="text-h3">{t.admin.sessionsTitle}</h2>
-          <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+          <ul className="surface mt-3 divide-y divide-border">
             {sessions.length === 0 ? (
               <li className="px-4 py-8 text-center text-sm text-muted-foreground">
                 {t.admin.sessionsEmpty}
@@ -255,7 +255,7 @@ export default async function AdminUserPage({
         {/* ---------------------------------------------- login history */}
         <section>
           <h2 className="text-h3">{t.admin.loginHistory}</h2>
-          <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+          <ul className="surface mt-3 divide-y divide-border">
             {attempts.length === 0 ? (
               <li className="px-4 py-8 text-center text-sm text-muted-foreground">
                 {t.admin.empty}
@@ -280,7 +280,7 @@ export default async function AdminUserPage({
       {/* ----------------------------------------------------- audit trail */}
       <section>
         <h2 className="text-h3">{t.admin.changeHistory}</h2>
-        <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+        <ul className="surface mt-3 divide-y divide-border">
           {history.items.length === 0 ? (
             <li className="px-4 py-8 text-center text-sm text-muted-foreground">
               {t.admin.auditEmpty}

@@ -1,4 +1,4 @@
-import { Circle } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type { Dictionary } from '@/lib/i18n'
 import type { Locale } from '@/lib/i18n/config'
 import { formatDateTime } from '@/lib/i18n/format'
@@ -34,10 +34,12 @@ export function DealTimeline({
   }
 
   return (
-    <ol className="space-y-4">
+    // A rail with stations, not a stack of bordered rows. Each marker is a filled disc
+    // that covers the connector behind it, so the line reads as continuous travel between
+    // states; the newest event — the one the deal is actually sitting on — is solid.
+    <ol className="space-y-5">
       {events.map((event, index) => {
-        const status =
-          t.dealStatus[event.toStatus as keyof typeof t.dealStatus] ?? event.toStatus
+        const status = t.dealStatus[event.toStatus as keyof typeof t.dealStatus] ?? event.toStatus
         const isLast = index === events.length - 1
 
         // The service writes the i18n key 'createdFromOffer' as the comment of the very
@@ -46,27 +48,38 @@ export function DealTimeline({
           event.comment === 'createdFromOffer' ? t.deal.createdFromOffer : event.comment
 
         return (
-          <li key={event.id} className="relative flex gap-3 pl-1">
+          <li key={event.id} className="relative flex gap-3.5">
+            {/*
+              `-bottom-5` is exactly the `space-y-5` gap, so the rail reaches the next
+              marker's top edge; `top-5` tucks its head behind this one. The tint is
+              primary rather than `border` — the hairline token is invisible on a card.
+            */}
             {!isLast ? (
               <span
                 aria-hidden="true"
-                className="absolute left-[9px] top-5 h-full w-px bg-border"
+                className="absolute -bottom-5 left-[13px] top-5 w-px bg-primary/25"
               />
             ) : null}
 
-            <Circle
+            <span
               aria-hidden="true"
-              className="mt-1 h-[18px] w-[18px] shrink-0 fill-primary-soft text-primary"
-            />
+              className={`icon-chip relative h-[26px] w-[26px] ${
+                isLast ? 'bg-primary text-primary-foreground' : ''
+              }`}
+            >
+              <Check className="h-3.5 w-3.5" />
+            </span>
 
-            <div className="min-w-0 flex-1 pb-1">
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">{status}</p>
               <p className="tnum text-caption text-muted-foreground">
                 {formatDateTime(event.createdAt, locale)}
                 {event.actor ? ` · ${event.actor.name}` : ''}
               </p>
               {comment ? (
-                <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{comment}</p>
+                <p className="mt-1.5 whitespace-pre-line text-sm text-muted-foreground">
+                  {comment}
+                </p>
               ) : null}
             </div>
           </li>

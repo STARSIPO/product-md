@@ -13,7 +13,7 @@ export default function Loading() {
 
       <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="rounded-lg border border-border bg-card p-3.5">
+          <div key={index} className="surface p-4">
             <Skeleton className="aspect-[4/3] w-full rounded-md" />
             <Skeleton className="mt-3 h-4 w-full" />
             <Skeleton className="mt-2 h-4 w-2/3" />

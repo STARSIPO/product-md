@@ -126,16 +126,23 @@ export default async function DashboardBalancePage({
         </h2>
         <Card className="p-5">
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-caption text-muted-foreground">{t.balance.current}</p>
-              <p className="tnum mt-1 text-3xl font-semibold">
-                {formatMoney(balanceBani, locale)}
-              </p>
-              {remainingDays !== null ? (
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {fmt(t.balance.presetDays, { days: remainingDays })}
+            {/* The one figure this page exists for, at the top of the type scale and
+                with nothing competing for the same glance. */}
+            <div className="flex min-w-0 items-center gap-4">
+              <span aria-hidden className="icon-chip h-10 w-10">
+                <Wallet className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-caption text-muted-foreground">{t.balance.current}</p>
+                <p className="tnum mt-1 text-h1 font-semibold leading-none">
+                  {formatMoney(balanceBani, locale)}
                 </p>
-              ) : null}
+                {remainingDays !== null ? (
+                  <p className="mt-1.5 text-sm text-muted-foreground">
+                    {fmt(t.balance.presetDays, { days: remainingDays })}
+                  </p>
+                ) : null}
+              </div>
             </div>
 
             {billingEnabled && dailyCostBani !== null ? (
@@ -229,7 +236,7 @@ export default async function DashboardBalancePage({
             <ul className="space-y-2 md:hidden">
               {history.entries.map((entry) => (
                 <li key={entry.id}>
-                  <Card className="p-3.5">
+                  <Card className="p-4">
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="text-sm font-medium">
                         {ledgerTypes[entry.type] ?? entry.type}

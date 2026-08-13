@@ -225,7 +225,7 @@ export function PhotoUploader({
           }
         }}
         className={cn(
-          'rounded-md border border-dashed border-border p-3 transition-colors',
+          'rounded-md border border-dashed border-input p-3 transition-colors',
           dragOver && 'border-primary bg-primary-soft/40',
         )}
       >
@@ -307,7 +307,7 @@ export function PhotoUploader({
             {tasks.map((task) => (
               <li
                 key={task.id}
-                className="flex aspect-square flex-col items-center justify-center gap-2 rounded-md border border-border bg-card p-3"
+                className="surface-muted flex aspect-square flex-col items-center justify-center gap-2 rounded-md p-3"
               >
                 <p className="w-full truncate text-center text-caption text-muted-foreground">
                   {task.name}

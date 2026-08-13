@@ -57,7 +57,10 @@ export function FavoriteButton({
           router.push(href('login'))
           return
         }
-        toast({ title: t.errors[result.error as keyof typeof t.errors] ?? t.errors.generic, variant: 'error' })
+        toast({
+          title: t.errors[result.error as keyof typeof t.errors] ?? t.errors.generic,
+          variant: 'error',
+        })
         return
       }
 
@@ -77,8 +80,11 @@ export function FavoriteButton({
       aria-pressed={active}
       aria-label={label}
       className={cn(
-        'relative z-10 grid h-9 w-9 place-items-center rounded-full border border-border bg-card/90 text-muted-foreground shadow-card backdrop-blur transition-colors',
-        'hover:text-destructive disabled:opacity-60',
+        'relative z-10 grid h-9 w-9 place-items-center rounded-full bg-card/90 text-muted-foreground shadow-card backdrop-blur transition-[color,box-shadow]',
+        // The visible circle stays 36px so it does not swallow the photo, while an
+        // invisible ring of padding brings the touch target to 44px on phones.
+        "before:absolute before:-inset-1 before:content-[''] md:before:hidden",
+        'hover:text-destructive hover:shadow-hover disabled:opacity-60',
         active && 'text-destructive',
         className,
       )}

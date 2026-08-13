@@ -18,7 +18,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(fun
       aria-invalid={invalid ? true : undefined}
       className={cn(
         controlBaseClasses,
-        'min-h-[96px] resize-y px-3 py-2.5 leading-relaxed',
+        'min-h-[104px] resize-y px-3.5 py-2.5 leading-relaxed',
         invalid && controlInvalidClasses,
         className,
       )}

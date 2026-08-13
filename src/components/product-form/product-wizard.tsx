@@ -20,6 +20,7 @@ import {
 import { publishProduct, saveProductDraft, updateProductAction } from '@/server/actions/products'
 import { resolveErrorMessage } from '@/app/[locale]/login/login-form'
 
+import { emptyWizardValues, type WizardValues } from './wizard-values'
 import { StepBasics } from './step-basics'
 import { StepPricing } from './step-pricing'
 import { StepAttributes } from './step-attributes'
@@ -45,49 +46,13 @@ import { StepPreview } from './step-preview'
 
 // --- shared shapes -----------------------------------------------------------
 
-/** An image already uploaded through /api/uploads/product-photo. */
-export interface PhotoDraft {
-  key: string
-  url: string
-}
-
-/** One wholesale price break, still in the seller's own text. */
-export interface TierDraft {
-  minQty: string
-  maxQty: string
-  priceBani: string
-}
-
-export interface WizardValues {
-  title: string
-  description: string
-  priceBani: string
-  currency: string
-  unit: Unit
-  minOrderQty: string
-  availableQty: string
-  availability: Availability
-  priceTiers: TierDraft[]
-  originCountry: string
-  productionPlace: string
-  manufacturer: string
-  batchNumber: string
-  producedAt: string
-  bestBefore: string
-  storageConditions: string
-  storageTempC: string
-  allergens: string
-  composition: string
-  packaging: string
-  supplyRegularity: string
-  deliveryTerms: string
-  deliveryPriceBani: string
-  pickupAvailable: boolean
-  deliveryRegions: string[]
-  videoUrl: string
-  photos: PhotoDraft[]
-  documentIds: string[]
-}
+/**
+ * The data shapes and the blank draft live in `./wizard-values`, which is *not* a client
+ * module — a server component has to be able to call `emptyWizardValues()` for real
+ * rather than get a client reference back. Re-exported as types only, so the step
+ * components can keep importing them from here.
+ */
+export type { PhotoDraft, TierDraft, WizardValues } from './wizard-values'
 
 export interface DistrictOption {
   id: string
@@ -105,39 +70,6 @@ export interface DocumentOption {
 export interface StepProps {
   form: UseFormReturn<WizardValues>
   values: WizardValues
-}
-
-export function emptyWizardValues(): WizardValues {
-  return {
-    title: '',
-    description: '',
-    priceBani: '',
-    currency: 'MDL',
-    unit: 'KG',
-    minOrderQty: '',
-    availableQty: '',
-    availability: 'IN_STOCK',
-    priceTiers: [],
-    originCountry: '',
-    productionPlace: '',
-    manufacturer: '',
-    batchNumber: '',
-    producedAt: '',
-    bestBefore: '',
-    storageConditions: '',
-    storageTempC: '',
-    allergens: '',
-    composition: '',
-    packaging: '',
-    supplyRegularity: '',
-    deliveryTerms: '',
-    deliveryPriceBani: '',
-    pickupAvailable: false,
-    deliveryRegions: [],
-    videoUrl: '',
-    photos: [],
-    documentIds: [],
-  }
 }
 
 function isUnit(value: string): value is Unit {
@@ -886,7 +818,7 @@ function CategoryStep({
                         defaultUnit: child.defaultUnit,
                       })
                     }
-                    className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded-md border border-border px-3 text-left text-sm transition-colors hover:border-primary hover:bg-primary-soft"
+                    className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded-md border border-input px-3 text-left text-sm transition-colors hover:border-primary hover:bg-primary-soft"
                   >
                     <span className="min-w-0 break-words">{child.name}</span>
                     <ChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />

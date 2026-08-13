@@ -102,7 +102,7 @@ export default async function AdminReviewsPage({
           </div>
           {row.comment ? <p className="mt-1 text-sm">{row.comment}</p> : null}
           {row.reply ? (
-            <p className="mt-1 border-l-2 border-border pl-2 text-caption text-muted-foreground">
+            <p className="mt-1.5 border-l-2 border-primary/30 pl-2.5 text-caption text-muted-foreground">
               {t.admin.reviewReply}: {row.reply.body}
             </p>
           ) : null}

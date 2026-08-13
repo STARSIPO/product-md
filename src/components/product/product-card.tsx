@@ -66,12 +66,14 @@ export function ProductCard({
   return (
     <article
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-card transition-colors',
-        product.isHighlighted ? 'border-primary/40 bg-primary-soft/20' : 'border-border',
-        'hover:border-muted-foreground/30',
+        'surface-interactive group relative flex flex-col overflow-hidden',
+        // A promoted card keeps a ring — that outline carries meaning, unlike the
+        // hairline that used to sit on every card.
+        product.isHighlighted && 'bg-primary-soft/25 ring-1 ring-inset ring-primary/25',
       )}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      {/* The image inherits the card radius through `overflow-hidden` above. */}
+      <div className="relative aspect-[4/3] bg-muted">
         {photo ? (
           <Image
             src={photo.key}
@@ -107,7 +109,7 @@ export function ProductCard({
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col p-3.5">
+      <div className="flex flex-1 flex-col p-4">
         <h3 className="text-sm font-medium leading-snug">
           {/* Stretched link keeps the whole card clickable without nesting anchors. */}
           <Link
@@ -118,17 +120,19 @@ export function ProductCard({
           </Link>
         </h3>
 
-        <div className="mt-2.5">
-          <p className="tnum text-lg font-semibold leading-none">
+        <div className="mt-3">
+          {/* Price is the loudest thing on the card, and it grows once the grid gives
+              the card enough width for the unit to stay on the same line. */}
+          <p className="tnum text-lg font-semibold leading-none md:text-h3 md:leading-none">
             {formatMoney(product.priceBani, locale)}
             <span className="ml-1 text-sm font-normal text-muted-foreground">/ {unitLabel}</span>
           </p>
-          <p className="mt-1.5 text-caption text-muted-foreground">
+          <p className="mt-2 text-caption text-muted-foreground">
             {t.product.minOrder}: {formatQuantity(product.minOrderQty, unitLabel, locale)}
           </p>
         </div>
 
-        <div className="mt-auto pt-3">
+        <div className="mt-auto pt-4">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-muted-foreground">
             {placeName ? (
               <span className="inline-flex items-center gap-1">
@@ -148,7 +152,8 @@ export function ProductCard({
             ) : null}
           </div>
 
-          <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2">
+          {/* Separated from the meta row by space, not by a rule. */}
+          <div className="mt-3 flex items-center gap-1.5">
             {isVerified ? (
               <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
             ) : null}

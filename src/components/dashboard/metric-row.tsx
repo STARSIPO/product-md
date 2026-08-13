@@ -5,9 +5,14 @@ import { cn } from '@/lib/utils'
 /**
  * The four numbers at the top of the overview.
  *
- * Deliberately not `StatTile`: those carry an icon, a hint and 88px of height each, and
- * seven of them is what made the old overview a wall. This is one row — two columns on a
- * 320px phone, four from `sm` — where each cell is a label and a figure and nothing else.
+ * Deliberately not `StatTile`: those carry an icon and a hint as well, and seven of them
+ * is what made the old overview a wall. This is one row — two columns on a 320px phone,
+ * four from `md` — where each cell is a label and a figure and nothing else.
+ *
+ * The figure is the whole point of the cell, so it is set at the heading scale and given
+ * room to breathe rather than being a slightly-bold body line. It steps up at `sm`
+ * instead of `md` because that is where the cell stops being 140px wide: a truncated
+ * balance is worse than a smaller one, and money is the widest thing that lands here.
  *
  * Values arrive pre-formatted (money through `formatMoney`, counts through
  * `formatNumber`) because this component has no locale and must not invent one.
@@ -34,17 +39,17 @@ export function MetricRow({ items, label }: { items: readonly MetricItem[]; labe
 
   return (
     <section aria-label={label}>
-      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+      <ul className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         {items.map((item) => (
           <li key={item.key} className="min-w-0">
             <Link
               href={item.href}
-              className="flex min-h-[76px] flex-col justify-between gap-1 rounded-lg border border-border bg-card px-3 py-2.5 transition-[border-color,box-shadow] duration-150 hover:border-primary/35 hover:shadow-pop focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="surface-interactive flex min-h-[96px] flex-col justify-between gap-2 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <span className="text-caption leading-snug text-muted-foreground">{item.label}</span>
               <span
                 className={cn(
-                  'tnum truncate text-lg font-semibold leading-tight',
+                  'tnum truncate text-h3 font-semibold leading-none sm:text-h2',
                   TONES[item.tone ?? 'default'],
                 )}
               >

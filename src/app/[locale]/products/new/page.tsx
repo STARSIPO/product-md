@@ -7,10 +7,12 @@ import { db } from '@/server/db'
 import { isEnabled } from '@/server/services/feature-flags'
 import {
   ProductWizard,
-  emptyWizardValues,
   type DistrictOption,
   type DocumentOption,
 } from '@/components/product-form/product-wizard'
+// Not from `product-wizard`: that module is `'use client'`, and a value imported across
+// the boundary arrives here as a client reference rather than the function itself.
+import { emptyWizardValues } from '@/components/product-form/wizard-values'
 
 /**
  * «Разместить товар».

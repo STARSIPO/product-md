@@ -20,6 +20,12 @@ import { cn } from '@/lib/utils'
  *
  * Content is always in the DOM. Folding a section must not hide a field from
  * find-in-page, and must never drop its value from the form.
+ *
+ * Visually it is one surface, not a box with a lid: the rule that used to sit between
+ * the header and the panel made every open section look like two stacked containers,
+ * and five of those down a page is the "nested boxes" effect the company profile was
+ * suffering from. The header and the fields it owns now share one card and are
+ * separated by space alone.
  */
 
 const DESKTOP_QUERY = '(min-width: 768px)'
@@ -68,7 +74,7 @@ export function CollapsibleSection({
   const expanded = open || isDesktop
 
   return (
-    <section className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
+    <section className="surface overflow-hidden">
       <h2>
         <button
           type="button"
@@ -77,7 +83,7 @@ export function CollapsibleSection({
           }}
           aria-expanded={expanded}
           aria-controls={panelId}
-          className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors duration-150 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:cursor-default md:hover:bg-transparent"
+          className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors duration-150 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-5 md:cursor-default md:pb-2 md:hover:bg-transparent"
         >
           <span className="min-w-0 flex-1">
             <span className="block text-h3">{title}</span>
@@ -106,7 +112,7 @@ export function CollapsibleSection({
       <div
         id={panelId}
         className={cn(
-          'space-y-4 border-t border-border px-4 pb-4 pt-4 sm:px-5 md:block',
+          'space-y-4 px-4 pb-5 pt-1 sm:px-5 md:block',
           open ? 'block' : 'hidden',
         )}
       >

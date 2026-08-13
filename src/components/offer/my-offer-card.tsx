@@ -1,4 +1,4 @@
-import { Paperclip } from 'lucide-react'
+import { Lock, Paperclip } from 'lucide-react'
 import type { Dictionary } from '@/lib/i18n'
 import type { Locale } from '@/lib/i18n/config'
 import { formatMoney, formatQuantity, lineTotalBani } from '@/lib/money'
@@ -94,18 +94,25 @@ export function MyOfferCard({
   return (
     <section
       aria-labelledby="my-offer-title"
-      className="rounded-lg border border-primary/35 bg-primary-soft/25 p-4"
+      // A card like every other, plus one hairline ring in the brand colour. The ring is
+      // the "this one is yours" state — the only meaning left for an outline in this pass.
+      className="surface p-5 ring-1 ring-inset ring-primary/20"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="my-offer-title" className="text-h3">
-          {t.offer.myOffer}
-        </h2>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span aria-hidden className="icon-chip h-9 w-9">
+            <Lock className="h-4 w-4" />
+          </span>
+          <h2 id="my-offer-title" className="text-h3">
+            {t.offer.myOffer}
+          </h2>
+        </div>
         <StatusBadge status={offer.status} label={statusLabel(t, offer.status)} />
       </div>
 
-      <p className="mt-1 text-caption text-muted-foreground">{t.request.sealedForSellers}</p>
+      <p className="mt-2 text-caption text-muted-foreground">{t.request.sealedForSellers}</p>
 
-      <dl className="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-2">
+      <dl className="mt-4 grid gap-x-4 gap-y-2.5 sm:grid-cols-2">
         {rows.map((row) => (
           <div key={row.label} className="flex items-baseline justify-between gap-3 sm:block">
             <dt className="text-caption text-muted-foreground">{row.label}</dt>
@@ -114,7 +121,7 @@ export function MyOfferCard({
         ))}
       </dl>
 
-      <p className="mt-3 flex items-baseline justify-between gap-3 border-t border-primary/20 pt-3">
+      <p className="surface-muted mt-4 flex items-baseline justify-between gap-3 rounded-md px-3 py-2.5">
         <span className="text-sm text-muted-foreground">{t.offer.total}</span>
         <span className="tnum text-h3 font-semibold">
           {formatMoney(
@@ -129,14 +136,14 @@ export function MyOfferCard({
       ) : null}
 
       {offer.attachmentName && attachmentUrl ? (
-        <p className="mt-3">
+        <p className="mt-2">
           <a
             href={attachmentUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded text-sm font-medium text-primary hover:text-primary-hover"
+            className="-mx-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-md px-2 text-sm font-medium text-primary hover:bg-primary-soft/60 hover:text-primary-hover"
           >
-            <Paperclip className="h-4 w-4" aria-hidden />
+            <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
             {offer.attachmentName}
             <span className="sr-only">{t.a11y.newTab}</span>
           </a>

@@ -374,7 +374,7 @@ export function TwoFactorSettings({
       ) : null}
 
       {enrollment ? (
-        <div className="space-y-3 rounded-md border border-border bg-muted/40 p-4">
+        <div className="surface-muted space-y-3 rounded-md p-4">
           <p className="text-sm text-muted-foreground">{t.settings.twoFactorManualHint}</p>
 
           <Field label={t.settings.twoFactorSecret} htmlFor="totp-secret">
@@ -480,11 +480,14 @@ export function SessionsList({ sessions }: { sessions: readonly SessionRow[] }) 
         {message ? <p className="text-caption text-muted-foreground">{message}</p> : null}
       </div>
 
-      <ul className="divide-y divide-border rounded-md border border-border">
+      {/* Each session is its own inset block. They are separate devices with separate
+          revoke buttons, so a gap tells them apart better than a hairline inside a box —
+          and the box was sitting inside the settings card already. */}
+      <ul className="space-y-2">
         {sessions.map((session) => (
           <li
             key={session.id}
-            className="flex min-h-[56px] flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2"
+            className="surface-muted flex min-h-[56px] flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md px-3 py-2"
           >
             <div className="min-w-0">
               <p className="truncate text-sm">

@@ -29,14 +29,14 @@ export function RatingSummary({
 
   if (summary.count === 0) {
     return (
-      <div className={className ?? 'rounded-lg border border-border bg-card p-4'}>
+      <div className={className ?? 'surface p-5'}>
         <p className="text-sm text-muted-foreground">{t.review.noRatingYet}</p>
       </div>
     )
   }
 
   return (
-    <div className={className ?? 'rounded-lg border border-border bg-card p-4'}>
+    <div className={className ?? 'surface p-5'}>
       <div className="flex items-center gap-3">
         <p className="tnum text-h1 leading-none">{summary.average.toFixed(1)}</p>
         <div>

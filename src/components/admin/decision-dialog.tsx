@@ -159,7 +159,7 @@ export function DecisionPanel({ kind, entityId }: { kind: DecisionKind; entityId
   return (
     <section
       aria-label={t.moderation.decision}
-      className="rounded-lg border border-border bg-card p-4"
+      className="surface p-5"
     >
       <h2 className="text-h3">{t.moderation.decision}</h2>
 
@@ -225,7 +225,7 @@ export function ComplaintDecisionPanel({ complaintId }: { complaintId: string })
   return (
     <section
       aria-label={t.moderation.decision}
-      className="rounded-lg border border-border bg-card p-4"
+      className="surface p-5"
     >
       <h2 className="text-h3">{t.moderation.decision}</h2>
 
@@ -304,7 +304,7 @@ export function ReviewDecisionPanel({
   return (
     <section
       aria-label={t.moderation.decision}
-      className="rounded-lg border border-border bg-card p-4"
+      className="surface p-5"
     >
       <h2 className="text-h3">{t.moderation.decision}</h2>
 
@@ -999,7 +999,7 @@ export function CompanyBadgeEditor({
   const labels = t.verification.types as Record<string, string | undefined>
 
   return (
-    <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+    <ul className="surface divide-y divide-border">
       {rows.map((row) => (
         <li key={row.type} className="flex flex-wrap items-center gap-3 px-4 py-3">
           <div className="min-w-0 flex-1">
@@ -1415,7 +1415,7 @@ export function BulkSynonymForm({
   const baseId = useId()
 
   return (
-    <section className="rounded-lg border border-border bg-card p-4 [&_input:not([type=checkbox])]:min-h-[44px] [&_select]:min-h-[44px] md:[&_input:not([type=checkbox])]:min-h-[42px] md:[&_select]:min-h-[42px]">
+    <section className="surface p-5 [&_input:not([type=checkbox])]:min-h-[44px] [&_select]:min-h-[44px] md:[&_input:not([type=checkbox])]:min-h-[42px] md:[&_select]:min-h-[42px]">
       <h2 className="text-h3">{t.admin.bulkSynonyms}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t.admin.bulkSynonymsHint}</p>
 

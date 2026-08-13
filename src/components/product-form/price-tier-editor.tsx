@@ -73,7 +73,7 @@ export function PriceTierEditor({
               baseBani !== null && tierBani !== null ? tierDiscountPercent(baseBani, tierBani) : 0
 
             return (
-              <li key={index} className="rounded-md border border-border p-3">
+              <li key={index} className="surface-muted rounded-md p-3">
                 <div className="mb-3 flex items-center justify-end gap-2">
                   {discount > 0 ? (
                     <span className="rounded-full bg-success-soft px-2.5 py-1 text-caption font-semibold text-success">

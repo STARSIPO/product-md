@@ -20,12 +20,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
       ref={ref}
       type={type}
       aria-invalid={invalid ? true : undefined}
-      className={cn(
-        controlBaseClasses,
-        'h-[42px] px-3',
-        invalid && controlInvalidClasses,
-        className,
-      )}
+      className={cn(controlBaseClasses, 'h-11 px-3.5', invalid && controlInvalidClasses, className)}
       {...props}
     />
   )

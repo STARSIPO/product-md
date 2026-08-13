@@ -203,7 +203,7 @@ export function OfferForm({
               inputMode="decimal"
               step="any"
               min="0"
-              className="flex-1"
+              className="min-w-0 flex-1"
               invalid={Boolean(errors.quantity)}
               {...register('quantity', { valueAsNumber: true })}
             />
@@ -359,13 +359,10 @@ export function OfferForm({
         </p>
       ) : null}
 
-      <div className="rounded-md border border-border bg-muted/50 p-3.5">
+      <div className="surface-muted rounded-md p-4">
         <div className="flex items-baseline justify-between gap-3">
           <span className="text-sm text-muted-foreground">{t.offer.total}</span>
-          <output
-            aria-live="polite"
-            className="tnum text-h3 font-semibold text-foreground"
-          >
+          <output aria-live="polite" className="tnum text-h3 font-semibold text-foreground">
             {formatMoney(totals.totalBani, locale)}
           </output>
         </div>

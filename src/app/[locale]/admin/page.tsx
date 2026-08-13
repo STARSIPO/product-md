@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ShieldAlert } from 'lucide-react'
+import { CreditCard, FileCheck2, Flag, Package, Scale, ShieldAlert, Star } from 'lucide-react'
 import { getDictionary, fmt, resolveLocale } from '@/lib/i18n'
 import { localePath } from '@/lib/i18n/config'
 import { formatDateTime } from '@/lib/i18n/format'
@@ -122,12 +122,15 @@ export default async function AdminDashboardPage({ params }: { params: { locale:
     env.PAYMENT_DRIVER === 'mock' ? `payments: ${env.PAYMENT_DRIVER}` : null,
   ].filter((value): value is string => value !== null)
 
+  // Each queue carries its own glyph so the six tiles are told apart by shape before the
+  // operator has read a single label.
   const queueTiles = [
     {
       key: 'products',
       label: t.admin.queueProducts,
       count: queue.PRODUCT ?? 0,
       href: localePath(locale, 'moderation', 'products'),
+      icon: <Package />,
       tone: 'attention' as const,
     },
     {
@@ -135,6 +138,7 @@ export default async function AdminDashboardPage({ params }: { params: { locale:
       label: t.admin.queueDocuments,
       count: pendingDocuments,
       href: localePath(locale, 'moderation', 'documents'),
+      icon: <FileCheck2 />,
       tone: 'attention' as const,
     },
     {
@@ -142,6 +146,7 @@ export default async function AdminDashboardPage({ params }: { params: { locale:
       label: t.admin.queueComplaints,
       count: openComplaints,
       href: `${localePath(locale, 'admin', 'complaints')}?status=OPEN`,
+      icon: <Flag />,
       tone: 'critical' as const,
     },
     {
@@ -149,6 +154,7 @@ export default async function AdminDashboardPage({ params }: { params: { locale:
       label: t.admin.queueReviews,
       count: queue.REVIEW ?? 0,
       href: localePath(locale, 'moderation', 'reviews'),
+      icon: <Star />,
       tone: 'attention' as const,
     },
     {
@@ -156,6 +162,7 @@ export default async function AdminDashboardPage({ params }: { params: { locale:
       label: t.admin.queuePayments,
       count: stuckPayments,
       href: `${localePath(locale, 'admin', 'payments')}?status=PENDING`,
+      icon: <CreditCard />,
       tone: 'attention' as const,
     },
     {
@@ -163,6 +170,7 @@ export default async function AdminDashboardPage({ params }: { params: { locale:
       label: t.admin.queueBalances,
       count: mismatches.length,
       href: `${localePath(locale, 'admin', 'balances')}?mismatch=1`,
+      icon: <Scale />,
       tone: 'critical' as const,
     },
   ]
@@ -204,13 +212,14 @@ export default async function AdminDashboardPage({ params }: { params: { locale:
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">{t.admin.actionQueueHint}</p>
 
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-3">
           {queueTiles.map((tile) => (
             <ActionQueueCard
               key={tile.key}
               label={tile.label}
               count={tile.count}
               href={tile.href}
+              icon={tile.icon}
               tone={tile.tone}
               clearLabel={t.admin.allClear}
               openLabel={t.admin.openSection}
@@ -225,7 +234,7 @@ export default async function AdminDashboardPage({ params }: { params: { locale:
           {t.admin.platformStats}
         </h2>
 
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-3">
           <StatTile
             label={t.admin.statUsers}
             value={users}
@@ -265,11 +274,11 @@ export default async function AdminDashboardPage({ params }: { params: { locale:
           {t.admin.recentActivity}
         </h2>
 
-        <div className="mt-3 grid gap-5 xl:grid-cols-3">
+        <div className="mt-4 grid gap-4 xl:grid-cols-3">
           {/* -------------------------------------------- recent signups */}
           <section>
             <h3 className="text-sm font-semibold">{t.admin.recentSignups}</h3>
-            <ul className="mt-2 divide-y divide-border rounded-lg border border-border bg-card">
+            <ul className="surface mt-3 divide-y divide-border">
               {recentSignups.length === 0 ? (
                 <li className="px-4 py-8 text-center text-sm text-muted-foreground">
                   {t.admin.empty}
@@ -298,7 +307,7 @@ export default async function AdminDashboardPage({ params }: { params: { locale:
           {/* ---------------------------------------------- recent deals */}
           <section>
             <h3 className="text-sm font-semibold">{t.admin.recentDeals}</h3>
-            <ul className="mt-2 divide-y divide-border rounded-lg border border-border bg-card">
+            <ul className="surface mt-3 divide-y divide-border">
               {recentDeals.length === 0 ? (
                 <li className="px-4 py-8 text-center text-sm text-muted-foreground">
                   {t.admin.empty}
@@ -339,7 +348,7 @@ export default async function AdminDashboardPage({ params }: { params: { locale:
           {/* ----------------------------------- recent moderator verdicts */}
           <section>
             <h3 className="text-sm font-semibold">{t.admin.recentDecisions}</h3>
-            <ul className="mt-2 divide-y divide-border rounded-lg border border-border bg-card">
+            <ul className="surface mt-3 divide-y divide-border">
               {recentDecisions.items.length === 0 ? (
                 <li className="px-4 py-8 text-center text-sm text-muted-foreground">
                   {t.admin.auditEmpty}

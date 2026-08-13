@@ -4,7 +4,7 @@ import { getDictionary, resolveLocale } from '@/lib/i18n'
 import { localePath } from '@/lib/i18n/config'
 import { formatDateShort, formatNumber } from '@/lib/i18n/format'
 import { formatMoney } from '@/lib/money'
-import { parsePage, cn } from '@/lib/utils'
+import { parsePage } from '@/lib/utils'
 import { PRODUCT_STATUSES } from '@/lib/constants'
 import { requireSeller } from '@/server/auth/guards'
 import { db } from '@/server/db'
@@ -24,6 +24,7 @@ import {
   Table,
   TableScroll,
 } from '@/components/ui'
+import { SectionRail, type SectionRailItem } from '@/components/dashboard/section-rail'
 import { ListingActions } from './listing-actions'
 
 /**
@@ -94,9 +95,21 @@ export default async function DashboardProductsPage({
   }))
 
   const balanceHref = localePath(locale, 'dashboard', 'balance')
+  const base = localePath(locale, 'dashboard', 'products')
+
+  const filters: SectionRailItem[] = [
+    { key: 'all', href: base, label: t.common.all, count: allCount, active: status === undefined },
+    ...FILTERS.map((value) => ({
+      key: value,
+      href: `${base}?status=${value}`,
+      label: productStatus[value] ?? value,
+      count: counts.get(value) ?? 0,
+      active: status === value,
+    })),
+  ]
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-h1">{t.dashboard.myProducts}</h1>
         <Link href={localePath(locale, 'products', 'new')} className={buttonVariants()}>
@@ -106,28 +119,7 @@ export default async function DashboardProductsPage({
 
       {/* Links rather than buttons: the filter belongs in the URL so it survives a
           refresh and can be shared. */}
-      <nav
-        aria-label={t.common.filters}
-        className="no-scrollbar -mx-4 overflow-x-auto border-b border-border px-4"
-      >
-        <ul className="flex min-w-max items-end gap-1">
-          <FilterTab
-            href={localePath(locale, 'dashboard', 'products')}
-            label={t.common.all}
-            count={allCount}
-            active={status === undefined}
-          />
-          {FILTERS.map((value) => (
-            <FilterTab
-              key={value}
-              href={`${localePath(locale, 'dashboard', 'products')}?status=${value}`}
-              label={productStatus[value] ?? value}
-              count={counts.get(value) ?? 0}
-              active={status === value}
-            />
-          ))}
-        </ul>
-      </nav>
+      <SectionRail label={t.common.filters} items={filters} />
 
       {rows.length === 0 ? (
         <Card>
@@ -212,7 +204,7 @@ export default async function DashboardProductsPage({
           <ul className="space-y-3 md:hidden">
             {rows.map((row) => (
               <li key={row.id}>
-                <Card className="p-3.5">
+                <Card className="p-4">
                   <div className="flex gap-3">
                     <Thumb url={row.photoUrl} alt={row.title} noPhoto={t.product.noPhoto} />
                     <div className="min-w-0 flex-1">
@@ -252,7 +244,9 @@ export default async function DashboardProductsPage({
                     />
                   ) : null}
 
-                  <div className="mt-2 border-t border-border pt-2">
+                  {/* Separated by space: the rule here divided a card from its own
+                      buttons, which is not a boundary that needed drawing. */}
+                  <div className="mt-2">
                     <ListingActions productId={row.id} slug={row.slug} status={row.status} />
                   </div>
                 </Card>
@@ -282,37 +276,6 @@ export default async function DashboardProductsPage({
         <p className="text-caption text-muted-foreground">{t.balance.zeroBalanceWarning}</p>
       ) : null}
     </div>
-  )
-}
-
-function FilterTab({
-  href,
-  label,
-  count,
-  active,
-}: {
-  href: string
-  label: string
-  count: number
-  active: boolean
-}) {
-  return (
-    <li>
-      <Link
-        href={href}
-        aria-current={active ? 'page' : undefined}
-        className={cn(
-          'relative inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap rounded-t-sm px-3 pb-2.5 pt-2 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-          "after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:content-['']",
-          active
-            ? 'font-semibold text-primary after:bg-primary'
-            : 'font-medium text-muted-foreground after:bg-transparent hover:text-foreground',
-        )}
-      >
-        {label}
-        <span className="tnum text-caption text-muted-foreground">{count}</span>
-      </Link>
-    </li>
   )
 }
 

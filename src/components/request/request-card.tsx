@@ -58,7 +58,8 @@ export function RequestCard({
   )
 
   const badges: { key: string; label: string; variant: 'accent' | 'primary' | 'neutral' }[] = []
-  if (request.isUrgent) badges.push({ key: 'urgent', label: t.request.badgeUrgent, variant: 'accent' })
+  if (request.isUrgent)
+    badges.push({ key: 'urgent', label: t.request.badgeUrgent, variant: 'accent' })
   if (request.verifiedOnly) {
     badges.push({ key: 'verified', label: t.request.badgeVerifiedOnly, variant: 'primary' })
   }
@@ -73,7 +74,7 @@ export function RequestCard({
   }
 
   return (
-    <article className="group relative flex flex-col rounded-lg border border-border bg-card p-4 shadow-card transition-colors hover:border-muted-foreground/30">
+    <article className="surface-interactive group relative flex flex-col p-4 md:p-5">
       <div className="flex flex-wrap items-center gap-1.5">
         {badges.slice(0, 2).map((badge) => (
           <Badge key={badge.key} variant={badge.variant} size="sm">
@@ -98,7 +99,9 @@ export function RequestCard({
         </Link>
       </h3>
 
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+      {/* The two figures a buyer scans for sit in an inset block instead of being
+          fenced off with rules. */}
+      <dl className="surface-muted mt-3 grid grid-cols-2 gap-x-4 gap-y-2 rounded-md p-3 text-sm">
         <div>
           <dt className="text-caption text-muted-foreground">{t.request.quantity}</dt>
           <dd className="tnum mt-0.5 font-medium">
@@ -138,7 +141,7 @@ export function RequestCard({
         </span>
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5 border-t border-border pt-2.5">
+      <div className="mt-4 flex items-center gap-1.5">
         {buyerVerified ? (
           <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
         ) : null}

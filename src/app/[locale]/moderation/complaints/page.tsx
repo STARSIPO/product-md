@@ -67,7 +67,7 @@ export default async function ModerationComplaintsPage({
     if (!complaint) {
       return (
         <EmptyState
-          className="rounded-lg border border-border bg-card"
+          className="surface"
           title={t.states.notFoundTitle}
           description={t.states.notFoundText}
           action={
@@ -99,8 +99,8 @@ export default async function ModerationComplaintsPage({
           {t.moderation.backToList}
         </Link>
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <article className="min-w-0 space-y-4 rounded-lg border border-border bg-card p-4">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <article className="surface min-w-0 space-y-4 p-5">
             <header className="flex flex-wrap items-center gap-2">
               <StatusBadge
                 status={complaint.status}
@@ -119,13 +119,13 @@ export default async function ModerationComplaintsPage({
             </dl>
 
             {complaint.description ? (
-              <p className="whitespace-pre-line rounded-md border border-border bg-muted p-3 text-sm">
+              <p className="surface-muted whitespace-pre-line rounded-md p-3.5 text-sm">
                 {complaint.description}
               </p>
             ) : null}
 
             {complaint.resolution ? (
-              <p className="rounded-md border border-border p-3 text-sm">
+              <p className="surface-muted rounded-md p-3.5 text-sm">
                 <span className="block text-caption text-muted-foreground">
                   {t.moderation.resolution}
                 </span>
@@ -137,7 +137,7 @@ export default async function ModerationComplaintsPage({
           <div className="space-y-4">
             <ComplaintDecisionPanel complaintId={complaint.id} />
 
-            <section className="rounded-lg border border-border bg-card p-4">
+            <section className="surface p-5">
               <h2 className="text-h3">{t.moderation.decisionLog}</h2>
               <ol className="mt-2 space-y-2">
                 {history.items.length === 0 ? (
@@ -254,7 +254,7 @@ export default async function ModerationComplaintsPage({
 
         {result.items.length === 0 ? (
           <EmptyState
-            className="rounded-lg border border-border bg-card"
+            className="surface"
             icon={<Flag aria-hidden />}
             title={t.moderation.empty}
             description={t.moderation.emptyText}

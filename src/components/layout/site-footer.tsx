@@ -9,17 +9,19 @@ export function SiteFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="mt-16 border-t border-border bg-card">
+    // No top rule and no boxed columns: the footer is the white block the page ends
+    // on, and the columns are held apart by space alone.
+    <footer className="mt-16 bg-card">
       <div className="container py-12">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="grid gap-x-8 gap-y-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="max-w-sm">
             <div className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-              <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
-                <LayoutGrid className="h-4 w-4" aria-hidden />
+              <span className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground">
+                <LayoutGrid className="h-[18px] w-[18px]" aria-hidden />
               </span>
               Product.md
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               {t.footer.aboutText}
             </p>
           </div>
@@ -45,11 +47,11 @@ export function SiteFooter() {
         </div>
 
         {/* The platform's legal position, stated where it cannot be missed. */}
-        <p className="mt-10 rounded-lg bg-muted px-4 py-3 text-caption leading-relaxed text-muted-foreground">
+        <p className="surface-muted mt-10 px-4 py-3.5 text-caption leading-relaxed text-muted-foreground">
           {t.footer.disclaimer}
         </p>
 
-        <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6 text-caption text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-3 text-caption text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {year} Product.md. {t.footer.rights}
           </p>
@@ -68,17 +70,20 @@ function FooterColumn({ title, children }: { title: string; children: React.Reac
   return (
     <div>
       <h2 className="text-sm font-semibold">{title}</h2>
-      <ul className="mt-3 space-y-2">{children}</ul>
+      <ul className="mt-4 space-y-2.5">{children}</ul>
     </div>
   )
 }
 
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <li className="contents">
+    // Not `display: contents` — that erases the <li> box, so the column's `space-y`
+    // has nothing to put a margin on and every link in the column runs together on
+    // one line ("КаталогСоздать заявкуПоставщики").
+    <li>
       <Link
         href={href}
-        className="inline-block rounded text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-block rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         {children}
       </Link>

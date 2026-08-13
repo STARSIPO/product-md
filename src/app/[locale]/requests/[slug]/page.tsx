@@ -212,7 +212,7 @@ export default async function RequestDetailPage({
   }
 
   return (
-    <div className="container py-8">
+    <div className="container py-10">
       <Breadcrumbs
         label={t.a11y.breadcrumb}
         items={[
@@ -269,7 +269,7 @@ export default async function RequestDetailPage({
           ) : null}
 
           {request.description ? (
-            <section className="mt-6" aria-labelledby="request-description-title">
+            <section className="mt-8" aria-labelledby="request-description-title">
               <h2 id="request-description-title" className="text-h3">
                 {t.request.description}
               </h2>
@@ -279,31 +279,39 @@ export default async function RequestDetailPage({
             </section>
           ) : null}
 
-          <section className="mt-6" aria-labelledby="request-facts-title">
+          <section className="mt-8" aria-labelledby="request-facts-title">
             <h2 id="request-facts-title" className="text-h3">
               {t.request.needed}
             </h2>
-            <dl className="mt-3 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+            {/* The commercial facts are what a supplier scans before deciding to quote,
+                so they sit on their own card with each glyph in a tinted chip instead of
+                floating loose against the page. */}
+            <dl className="surface mt-3 grid gap-x-6 gap-y-4 p-4 sm:grid-cols-2 md:p-5">
               {facts.map((fact) => (
-                <div key={`${fact.label}-${fact.value}`} className="flex gap-2.5">
-                  <span aria-hidden className="mt-0.5 shrink-0 text-muted-foreground">
+                // The chip spans both rows of a two-row grid, which keeps <dt> and <dd>
+                // direct children of the <div> — a <span> around them was invalid in a <dl>.
+                <div
+                  key={`${fact.label}-${fact.value}`}
+                  className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3"
+                >
+                  <span aria-hidden className="icon-chip row-span-2 h-9 w-9">
                     {fact.icon}
                   </span>
-                  <span className="min-w-0">
-                    <dt className="text-caption text-muted-foreground">{fact.label}</dt>
-                    <dd className="tnum mt-0.5 text-sm font-medium">{fact.value}</dd>
-                  </span>
+                  <dt className="text-caption text-muted-foreground">{fact.label}</dt>
+                  <dd className="tnum text-sm font-medium">{fact.value}</dd>
                 </div>
               ))}
             </dl>
           </section>
 
           {request.attributes.length > 0 ? (
-            <section className="mt-6" aria-labelledby="request-attributes-title">
+            <section className="mt-8" aria-labelledby="request-attributes-title">
               <h2 id="request-attributes-title" className="text-h3">
                 {t.request.attributes}
               </h2>
-              <dl className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+              {/* Row rules kept: a spec list is read line by line and the lines have to be
+                  separable. The box outline around them is what went. */}
+              <dl className="surface mt-3 divide-y divide-border">
                 {request.attributes.map((value) => {
                   const label =
                     value.attribute.translations.find(
@@ -326,7 +334,7 @@ export default async function RequestDetailPage({
                   return (
                     <div
                       key={value.id}
-                      className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-2.5"
+                      className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3"
                     >
                       <dt className="text-sm text-muted-foreground">{label}</dt>
                       <dd className="text-sm font-medium">{rendered}</dd>
@@ -338,51 +346,63 @@ export default async function RequestDetailPage({
           ) : null}
 
           {requirements.length > 0 || request.allowPartial || request.verifiedOnly ? (
-            <section className="mt-6" aria-labelledby="request-requirements-title">
+            <section className="mt-8" aria-labelledby="request-requirements-title">
               <h2 id="request-requirements-title" className="text-h3">
                 {t.request.requirements}
               </h2>
-              <dl className="mt-3 space-y-3">
-                {requirements.map((requirement) => (
-                  <div key={requirement.label}>
-                    <dt className="text-caption text-muted-foreground">{requirement.label}</dt>
-                    <dd className="mt-0.5 whitespace-pre-line text-sm">{requirement.value}</dd>
-                  </div>
-                ))}
-              </dl>
-              <ul className="mt-3 space-y-1.5 text-sm">
-                {request.allowPartial ? (
-                  <li className="flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-                    {t.request.allowPartial}
-                  </li>
+              <div className="surface mt-3 space-y-4 p-4 md:p-5">
+                {requirements.length > 0 ? (
+                  <dl className="space-y-4">
+                    {requirements.map((requirement) => (
+                      <div key={requirement.label}>
+                        <dt className="text-caption text-muted-foreground">{requirement.label}</dt>
+                        <dd className="mt-0.5 whitespace-pre-line text-sm">{requirement.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
                 ) : null}
-                {request.verifiedOnly ? (
-                  <li className="flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-                    {t.request.verifiedOnly}
-                  </li>
+                {request.allowPartial || request.verifiedOnly ? (
+                  <ul className="space-y-2 text-sm">
+                    {request.allowPartial ? (
+                      <li className="flex items-center gap-2.5">
+                        <span aria-hidden className="icon-chip h-7 w-7">
+                          <ShieldCheck className="h-4 w-4" />
+                        </span>
+                        {t.request.allowPartial}
+                      </li>
+                    ) : null}
+                    {request.verifiedOnly ? (
+                      <li className="flex items-center gap-2.5">
+                        <span aria-hidden className="icon-chip h-7 w-7">
+                          <ShieldCheck className="h-4 w-4" />
+                        </span>
+                        {t.request.verifiedOnly}
+                      </li>
+                    ) : null}
+                  </ul>
                 ) : null}
-              </ul>
+              </div>
             </section>
           ) : null}
 
           {attachments.length > 0 ? (
-            <section className="mt-6" aria-labelledby="request-attachments-title">
+            <section className="mt-8" aria-labelledby="request-attachments-title">
               <h2 id="request-attachments-title" className="text-h3">
                 {t.request.attachments}
               </h2>
-              <ul className="mt-3 space-y-1.5">
+              <ul className="mt-3 space-y-2">
                 {attachments.map((attachment) => (
                   <li key={attachment.id}>
                     <a
                       href={attachment.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-primary hover:text-primary-hover"
+                      className="surface-interactive flex min-h-[44px] items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-primary"
                     >
-                      <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
-                      {attachment.fileName}
+                      <span aria-hidden className="icon-chip h-9 w-9">
+                        <Paperclip className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 truncate">{attachment.fileName}</span>
                       <span className="sr-only">{t.a11y.newTab}</span>
                     </a>
                   </li>
@@ -394,13 +414,13 @@ export default async function RequestDetailPage({
 
         {/* ------------------------------------------------------------ aside */}
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-          <div className="rounded-lg border border-border bg-card p-4 shadow-card">
+          <div className="surface p-5">
             {request.offersDeadlineAt ? (
-              <p className="flex items-center gap-2 text-sm">
+              <p className="surface-muted flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm">
                 <CalendarClock className="h-4 w-4 shrink-0 text-warning" aria-hidden />
                 <span className="text-muted-foreground">{t.request.deadline}</span>
                 <OfferDeadline
-                  className="ml-auto font-medium text-warning"
+                  className="tnum ml-auto font-medium text-warning"
                   deadline={request.offersDeadlineAt.toISOString()}
                   initial={formatCountdown(request.offersDeadlineAt, locale)}
                 />
@@ -498,7 +518,7 @@ export default async function RequestDetailPage({
           ) : null}
 
           <div>
-            <h2 className="mb-2 text-h3">{t.request.buyer}</h2>
+            <h2 className="mb-3 text-h3">{t.request.buyer}</h2>
             <CompanyCard company={request.company} locale={locale} t={t} />
           </div>
         </aside>

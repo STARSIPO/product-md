@@ -89,7 +89,7 @@ export default async function ContactsPage({ params }: { params: { locale: strin
       <section id="channels" className="mt-10 scroll-mt-24">
         <h2 className="text-h3">{doc.channelsHeading}</h2>
 
-        <dl className="mt-5 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+        <dl className="surface mt-5 divide-y divide-border overflow-hidden">
           {doc.channels.map((channel) => (
             <div key={channel.label} className="px-4 py-4 sm:flex sm:gap-6">
               <dt className="text-sm font-medium sm:w-56 sm:shrink-0">{channel.label}</dt>

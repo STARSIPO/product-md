@@ -76,10 +76,15 @@ export default async function SearchPage({
   const nothingFound = query !== '' && (results?.total ?? 0) === 0 && groupCount === 0
 
   return (
-    <div className="container py-6 md:py-8">
+    <div className="container py-8 md:py-10">
       <h1 className="text-h1">{t.search.resultsTitle}</h1>
 
-      <form method="get" action={basePath} role="search" className="mt-4 flex flex-wrap gap-2">
+      <form
+        method="get"
+        action={basePath}
+        role="search"
+        className="mt-4 flex min-w-0 flex-wrap gap-2"
+      >
         <label htmlFor="site-search" className="sr-only">
           {t.common.search}
         </label>
@@ -100,7 +105,7 @@ export default async function SearchPage({
 
       {query === '' ? (
         <EmptyState
-          className="mt-8 rounded-lg border border-border bg-card"
+          className="surface mt-8"
           icon={<Search aria-hidden />}
           title={t.common.search}
           description={t.search.placeholder}
@@ -112,7 +117,7 @@ export default async function SearchPage({
         />
       ) : nothingFound ? (
         <EmptyState
-          className="mt-8 rounded-lg border border-border bg-card"
+          className="surface mt-8"
           icon={<Search aria-hidden />}
           title={fmt(t.search.noResults, { query })}
           description={t.search.noResultsHint}
@@ -141,7 +146,7 @@ export default async function SearchPage({
                   <li key={category.id}>
                     <Link
                       href={localePath(locale, 'category', category.slug)}
-                      className="inline-flex min-h-[44px] flex-col justify-center rounded-lg border border-border bg-card px-3.5 py-1.5 transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className="surface-interactive inline-flex min-h-[44px] flex-col justify-center px-4 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       <span className="text-sm font-medium">{category.name}</span>
                       {category.trail && category.trail !== category.name ? (
@@ -156,7 +161,7 @@ export default async function SearchPage({
 
           {/* -------------------------------------------------------- products */}
           <section aria-labelledby="group-products">
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
               <h2 id="group-products" className="text-h3">
                 {t.search.groupProducts}
               </h2>
@@ -175,7 +180,7 @@ export default async function SearchPage({
 
             {results && results.items.length > 0 ? (
               <>
-                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
                   {results.items.map((product, index) => (
                     <ProductCard
                       key={product.id}
@@ -207,7 +212,7 @@ export default async function SearchPage({
                 />
               </>
             ) : (
-              <p className="mt-3 rounded-lg border border-dashed border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+              <p className="surface-muted mt-4 px-4 py-6 text-center text-sm text-muted-foreground">
                 {fmt(t.search.noResults, { query })}
               </p>
             )}
@@ -219,14 +224,19 @@ export default async function SearchPage({
               <h2 id="group-suppliers" className="text-h3">
                 {t.search.groupSuppliers}
               </h2>
-              <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+              {/* One surface, hairlines only *between* rows: these are list items that
+                  must be told apart, which is exactly where a divider still earns its
+                  place. First and last rows keep the rounded corners of the panel. */}
+              <ul className="surface mt-4 divide-y divide-border overflow-hidden">
                 {groups.suppliers.map((supplier) => (
                   <li key={supplier.id}>
                     <Link
                       href={localePath(locale, 'suppliers', supplier.slug)}
                       className="flex min-h-[56px] items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                     >
-                      <Store className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                      <span className="icon-chip h-9 w-9" aria-hidden>
+                        <Store className="h-4 w-4" />
+                      </span>
                       <span className="min-w-0 flex-1 truncate text-sm font-medium">
                         {supplier.displayName}
                       </span>
@@ -257,14 +267,16 @@ export default async function SearchPage({
               <h2 id="group-requests" className="text-h3">
                 {t.search.groupRequests}
               </h2>
-              <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+              <ul className="surface mt-4 divide-y divide-border overflow-hidden">
                 {groups.requests.map((request) => (
                   <li key={request.id}>
                     <Link
                       href={localePath(locale, 'requests', request.slug)}
                       className="flex min-h-[56px] items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                     >
-                      <ClipboardList className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                      <span className="icon-chip h-9 w-9" aria-hidden>
+                        <ClipboardList className="h-4 w-4" />
+                      </span>
                       <span className="min-w-0 flex-1 truncate text-sm font-medium">
                         {request.title}
                       </span>
@@ -301,7 +313,7 @@ export default async function SearchPage({
                       href={`${localePath(locale, 'products')}${buildQuery({
                         district: district.id,
                       })}`}
-                      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-card px-3.5 text-sm transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-[36px]"
+                      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-muted px-4 text-sm font-medium transition-colors hover:bg-primary-soft hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-[36px]"
                     >
                       <MapPin className="h-3.5 w-3.5" aria-hidden />
                       {district.name}
@@ -313,7 +325,7 @@ export default async function SearchPage({
           ) : null}
 
           {/* ----------------------------------------------- cross-sell to demand */}
-          <p className="rounded-lg border border-dashed border-border bg-card px-4 py-5 text-center text-sm text-muted-foreground">
+          <p className="surface-muted px-4 py-5 text-center text-sm text-muted-foreground">
             <Package className="mr-1.5 inline h-4 w-4 align-text-bottom" aria-hidden />
             {t.catalog.emptyCreateRequest}{' '}
             <Link

@@ -60,7 +60,7 @@ export function ProgressSteps({
           const marker = (
             <span
               className={cn(
-                'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-caption font-semibold transition-colors duration-150',
+                'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-caption font-semibold transition-colors duration-150',
                 completed && 'bg-primary text-primary-foreground',
                 isCurrent && 'border-2 border-primary bg-primary-soft text-primary',
                 !completed && !isCurrent && 'border border-input bg-card text-muted-foreground',
@@ -111,10 +111,7 @@ export function ProgressSteps({
               {stepIndex < steps.length - 1 ? (
                 <span
                   aria-hidden="true"
-                  className={cn(
-                    'mt-3.5 h-px min-w-4 flex-1',
-                    completed ? 'bg-primary' : 'bg-border',
-                  )}
+                  className={cn('mt-4 h-px min-w-4 flex-1', completed ? 'bg-primary' : 'bg-border')}
                 />
               ) : null}
             </li>

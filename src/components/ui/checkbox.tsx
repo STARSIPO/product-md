@@ -18,7 +18,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(functi
         type="checkbox"
         aria-invalid={invalid ? true : undefined}
         className={cn(
-          'peer h-5 w-5 cursor-pointer appearance-none rounded-[5px] border border-input bg-card transition-colors duration-150 checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:bg-muted',
+          'peer h-5 w-5 cursor-pointer appearance-none rounded-sm border border-input bg-card transition-colors duration-150 checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:bg-muted',
           invalid && 'border-destructive',
           className,
         )}

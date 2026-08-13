@@ -56,25 +56,29 @@ export function SiteHeader({
   const isStaff = user?.role === 'ADMIN' || user?.role === 'MODERATOR'
 
   return (
+    // The bottom edge is a hairline rather than a rule: it is the only thing marking
+    // where the sticky chrome ends, so it stays — softened, not deleted.
     <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
       <div className="container flex h-16 items-center gap-3">
         <Link
           href={href()}
-          className="flex shrink-0 items-center gap-2 rounded text-lg font-semibold tracking-tight"
+          className="flex shrink-0 items-center gap-2 rounded-md text-lg font-semibold tracking-tight"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
-            <LayoutGrid className="h-4 w-4" aria-hidden />
+          <span className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground">
+            <LayoutGrid className="h-[18px] w-[18px]" aria-hidden />
           </span>
           <span className="hidden sm:inline">Product.md</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label={t.nav.menu}>
+        <nav className="hidden items-center gap-0.5 lg:flex" aria-label={t.nav.menu}>
           <HeaderLink href={href('products')}>{t.nav.catalog}</HeaderLink>
           <HeaderLink href={href('requests')}>{t.nav.requests}</HeaderLink>
           <HeaderLink href={href('suppliers')}>{t.nav.suppliers}</HeaderLink>
         </nav>
 
-        <div className="min-w-0 flex-1">
+        {/* The search field is the centre of the header; `min-w-0` keeps it shrinkable
+            so nothing pushes the row into a horizontal scroll on a 320px screen. */}
+        <div className="min-w-0 flex-1 lg:max-w-xl">
           <GlobalSearch popularCategories={popularCategories} />
         </div>
 
@@ -132,9 +136,9 @@ export function SiteHeader({
                   />
                   <div
                     role="menu"
-                    className="absolute right-0 z-20 mt-1 w-60 animate-slide-up overflow-hidden rounded-lg border border-border bg-card py-1 shadow-pop"
+                    className="absolute right-0 z-20 mt-2 w-60 animate-slide-up overflow-hidden rounded-lg bg-card p-1.5 shadow-pop"
                   >
-                    <div className="border-b border-border px-3 py-2">
+                    <div className="px-2 pb-2 pt-1.5">
                       <p className="truncate text-sm font-medium">{user.name}</p>
                       {user.companyName ? (
                         <p className="truncate text-caption text-muted-foreground">
@@ -159,7 +163,7 @@ export function SiteHeader({
                       <button
                         type="submit"
                         role="menuitem"
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                       >
                         <LogOut className="h-4 w-4" aria-hidden />
                         {t.common.signOut}
@@ -172,7 +176,10 @@ export function SiteHeader({
           ) : (
             <Link
               href={href('login')}
-              className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'hidden md:inline-flex')}
+              className={cn(
+                buttonVariants({ variant: 'ghost', size: 'sm' }),
+                'hidden md:inline-flex',
+              )}
             >
               {t.common.signIn}
             </Link>
@@ -186,10 +193,14 @@ export function SiteHeader({
 
             {postOpen ? (
               <>
-                <div className="fixed inset-0 z-10" aria-hidden onClick={() => setPostOpen(false)} />
+                <div
+                  className="fixed inset-0 z-10"
+                  aria-hidden
+                  onClick={() => setPostOpen(false)}
+                />
                 <div
                   role="menu"
-                  className="absolute right-0 z-20 mt-1 w-72 animate-slide-up overflow-hidden rounded-lg border border-border bg-card p-1 shadow-pop"
+                  className="absolute right-0 z-20 mt-2 w-72 animate-slide-up overflow-hidden rounded-lg bg-card p-1.5 shadow-pop"
                 >
                   <PostOption
                     href={href('products', 'new')}
@@ -215,13 +226,17 @@ export function SiteHeader({
             aria-expanded={menuOpen}
             aria-label={menuOpen ? t.nav.closeMenu : t.nav.openMenu}
           >
-            {menuOpen ? <X className="h-5 w-5" aria-hidden /> : <Menu className="h-5 w-5" aria-hidden />}
+            {menuOpen ? (
+              <X className="h-5 w-5" aria-hidden />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden />
+            )}
           </button>
         </div>
       </div>
 
       {menuOpen ? (
-        <div className="animate-slide-up border-t border-border bg-card lg:hidden">
+        <div className="animate-slide-up bg-card shadow-card lg:hidden">
           <nav className="container flex flex-col py-2" aria-label={t.nav.menu}>
             <MobileLink href={href('products')} onClick={() => setMenuOpen(false)}>
               {t.nav.catalog}
@@ -244,7 +259,7 @@ export function SiteHeader({
                 {t.common.signIn}
               </MobileLink>
             )}
-            <div className="border-t border-border pt-2">
+            <div className="mt-2">
               <LanguageSwitcher />
             </div>
           </nav>
@@ -299,7 +314,7 @@ function MenuLink({
       href={href}
       role="menuitem"
       onClick={onClick}
-      className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
       {children}
     </Link>
@@ -322,7 +337,7 @@ function PostOption({
       href={href}
       role="menuitem"
       onClick={onClick}
-      className="block rounded-md px-3 py-2.5 transition-colors hover:bg-muted"
+      className="block rounded-md px-2.5 py-2.5 transition-colors hover:bg-muted"
     >
       <span className="block text-sm font-medium">{title}</span>
       <span className="mt-0.5 block text-caption text-muted-foreground">{hint}</span>

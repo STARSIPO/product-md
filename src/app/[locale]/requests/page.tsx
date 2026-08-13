@@ -77,7 +77,7 @@ export default async function RequestsPage({
   }
 
   return (
-    <div className="container py-8">
+    <div className="container py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-h1">{t.request.title}</h1>
@@ -97,7 +97,7 @@ export default async function RequestsPage({
         method="get"
         action={basePath}
         aria-label={t.filters.title}
-        className="mt-6 rounded-lg border border-border bg-card p-4"
+        className="surface mt-6 p-4 md:p-5"
       >
         <div className="grid gap-4 md:grid-cols-4">
           <label className="block">
@@ -169,7 +169,7 @@ export default async function RequestsPage({
 
       {results.items.length === 0 ? (
         <EmptyState
-          className="mt-4 rounded-lg border border-border bg-card"
+          className="surface mt-4"
           icon={<ClipboardList aria-hidden />}
           title={t.request.emptyTitle}
           description={t.request.emptyText}
@@ -186,7 +186,9 @@ export default async function RequestsPage({
         />
       ) : (
         <>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Density is deliberate: a buyer scanning the board needs many needs at once,
+              so the column count does not drop — only the gap breathes above md. */}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3">
             {results.items.map((request) => (
               <RequestCard key={request.id} request={request} locale={locale} t={t} />
             ))}

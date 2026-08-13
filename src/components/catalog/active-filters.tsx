@@ -36,7 +36,9 @@ export function ActiveFilters({
           <Link
             href={chip.href}
             aria-label={`${t.common.remove}: ${chip.label}`}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-card px-3 text-sm transition-colors hover:border-destructive/40 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-[32px]"
+            // A chip is a filled pill, not a miniature outlined card: removing the
+            // outline is what stops a row of active facets from reading as a toolbar.
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-muted px-3.5 text-sm text-foreground transition-colors hover:bg-destructive-soft hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-[34px]"
           >
             <span className="max-w-[16rem] truncate">{chip.label}</span>
             <X className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -48,7 +50,7 @@ export function ActiveFilters({
         <li>
           <Link
             href={resetHref}
-            className="inline-flex min-h-[44px] items-center rounded-full px-3 text-sm font-medium text-primary underline-offset-2 transition-colors hover:text-primary-hover hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-[32px]"
+            className="inline-flex min-h-[44px] items-center rounded-full px-3 text-sm font-medium text-primary underline-offset-2 transition-colors hover:text-primary-hover hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-[34px]"
           >
             {t.filters.reset}
           </Link>

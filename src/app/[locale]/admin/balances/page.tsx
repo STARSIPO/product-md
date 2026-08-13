@@ -170,7 +170,7 @@ export default async function AdminBalancesPage({
             <Alert variant="destructive" className="mt-3">
               {fmt(t.admin.balanceMismatch, { count: mismatches.length })}
             </Alert>
-            <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+            <ul className="surface mt-3 divide-y divide-border">
               {mismatches.map((row) => (
                 <li key={row.companyId} className="flex flex-wrap items-center gap-3 px-4 py-3">
                   <Link

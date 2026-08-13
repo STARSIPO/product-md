@@ -100,8 +100,10 @@ export default async function DashboardLayout({
   )
 
   return (
-    <div className="container py-6">
-      <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8">
+    <div className="container py-6 lg:py-8">
+      {/* `minmax(0,1fr)` on the content column and `min-w-0` inside SidebarNav are both
+          required: either one missing and the eleven-tab strip widens the whole grid. */}
+      <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8">
         <SidebarNav items={items} label={t.dashboard.menuLabel} />
         <div className="min-w-0">{children}</div>
       </div>

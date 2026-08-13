@@ -24,10 +24,7 @@ export function SkeletonText({ lines = 3, className }: SkeletonTextProps) {
 
 export function SkeletonCard({ className }: SkeletonProps) {
   return (
-    <div
-      aria-hidden="true"
-      className={cn('rounded-lg border border-border bg-card p-5 shadow-card', className)}
-    >
+    <div aria-hidden="true" className={cn('surface p-5', className)}>
       <Skeleton className="h-5 w-2/5" />
       <SkeletonText lines={3} className="mt-4" />
     </div>
@@ -36,13 +33,7 @@ export function SkeletonCard({ className }: SkeletonProps) {
 
 export function SkeletonProductCard({ className }: SkeletonProps) {
   return (
-    <div
-      aria-hidden="true"
-      className={cn(
-        'overflow-hidden rounded-lg border border-border bg-card shadow-card',
-        className,
-      )}
-    >
+    <div aria-hidden="true" className={cn('surface overflow-hidden', className)}>
       <Skeleton className="aspect-[4/3] w-full rounded-none" />
       <div className="space-y-2.5 p-4">
         <Skeleton className="h-4 w-1/3" />
@@ -65,14 +56,9 @@ export function SkeletonTable({ rows = 5, cols = 4, className }: SkeletonTablePr
   const columns = Math.max(1, cols)
 
   return (
-    <div
-      aria-hidden="true"
-      className={cn(
-        'overflow-hidden rounded-lg border border-border bg-card shadow-card',
-        className,
-      )}
-    >
-      <div className="flex gap-4 border-b border-border px-4 py-3">
+    <div aria-hidden="true" className={cn('surface overflow-hidden', className)}>
+      {/* Mirrors the real table: one hairline under the header, one between rows. */}
+      <div className="flex gap-4 border-b border-border px-4 py-3.5">
         {Array.from({ length: columns }, (_, index) => (
           <Skeleton key={index} className="h-3.5 flex-1" />
         ))}

@@ -114,7 +114,7 @@ export function NotificationList({ items }: { items: readonly NotificationItemVi
         </Button>
       </div>
 
-      <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+      <ul className="surface divide-y divide-border overflow-hidden">
         {items.map((item) => {
           const read = isRead(item)
           const dayKey = chisinauDayKey(item.createdAt)
@@ -128,14 +128,14 @@ export function NotificationList({ items }: { items: readonly NotificationItemVi
           return (
             <li key={item.id}>
               {startsDay ? (
-                <p className="border-b border-border bg-muted/50 px-4 py-1.5 text-caption font-medium text-muted-foreground">
+                <p className="bg-muted/60 px-4 py-2 text-caption font-medium text-muted-foreground">
                   {dayLabel(item.createdAt)}
                 </p>
               ) : null}
 
               <div
                 className={cn(
-                  'flex items-start gap-3 px-4 py-3',
+                  'flex items-start gap-3 px-4 py-3.5',
                   read ? 'bg-transparent' : 'bg-primary-soft/30',
                 )}
               >

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ArrowRight, Check } from 'lucide-react'
+import { ArrowRight, Check, ListChecks } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import {
@@ -63,7 +63,14 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        'rounded-lg border border-border bg-card',
+        // Elevation instead of an outline; `overflow-hidden` keeps the internal row
+        // hairlines from poking out past the rounded corners.
+        'surface overflow-hidden',
+        // Generous gutters: an operator reads these rows all day, and the extra space is
+        // what lets the hairline row rules carry the separation on their own.
+        // Horizontal only — the empty-state cell sets its own generous vertical padding
+        // and an arbitrary descendant variant would outrank it.
+        '[&_td]:px-5 [&_th]:px-5',
         // Row actions are built from the shared controls, which top out at 42px — right
         // for a desktop toolbar, two pixels short of a thumb. Below `md` they grow.
         '[&_select]:min-h-[44px] md:[&_select]:min-h-[42px]',
@@ -114,7 +121,7 @@ export function DataTable<T>({
         ) : (
           <ul className="divide-y divide-border">
             {rows.map((row) => (
-              <li key={rowKey(row)} className="px-4 py-3.5">
+              <li key={rowKey(row)} className="px-4 py-4">
                 {primary ? (
                   <div className="text-sm font-medium text-foreground">{primary.cell(row)}</div>
                 ) : null}
@@ -170,7 +177,7 @@ export function TableToolbar({
       action={action}
       aria-label={label}
       className={cn(
-        'rounded-lg border border-border bg-card p-4',
+        'surface p-4',
         // Same reason as in DataTable: the shared controls are 42px, and a filter bar is
         // exactly what an operator pokes at one-handed on a phone.
         '[&_select]:min-h-[44px] md:[&_select]:min-h-[42px]',
@@ -180,17 +187,13 @@ export function TableToolbar({
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          type="submit"
-          className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:min-h-[42px]"
-        >
+        {/* The shared button recipe rather than a hand-copied class list — one place
+            decides the radius and the focus ring for every control in the panel. */}
+        <button type="submit" className={buttonVariants({ variant: 'primary' })}>
           {submitLabel}
         </button>
         {resetHref && resetLabel ? (
-          <a
-            href={resetHref}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-transparent px-4 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:min-h-[42px]"
-          >
+          <a href={resetHref} className={buttonVariants({ variant: 'ghost' })}>
             {resetLabel}
           </a>
         ) : null}
@@ -223,14 +226,14 @@ export function StatTile({
     return (
       <a
         href={href}
-        className="block rounded-lg border border-border bg-card px-4 py-3.5 transition-[border-color,box-shadow] duration-150 hover:border-primary/35 hover:shadow-pop focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="surface-interactive block p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         {body}
       </a>
     )
   }
 
-  return <div className="rounded-lg border border-border bg-card px-4 py-3.5">{body}</div>
+  return <div className="surface p-4">{body}</div>
 }
 
 /**
@@ -247,6 +250,7 @@ export function ActionQueueCard({
   href,
   clearLabel,
   openLabel,
+  icon,
   tone = 'attention',
 }: {
   label: string
@@ -255,6 +259,8 @@ export function ActionQueueCard({
   /** Shown instead of the number when the queue is empty. */
   clearLabel: string
   openLabel: string
+  /** Section glyph, rendered inside a tinted chip. Falls back to a generic queue mark. */
+  icon?: ReactNode
   tone?: 'attention' | 'critical'
 }) {
   const pending = count > 0
@@ -264,37 +270,53 @@ export function ActionQueueCard({
       href={href}
       aria-label={`${label}: ${pending ? count : clearLabel}`}
       className={cn(
-        'group flex min-h-[104px] flex-col justify-between rounded-lg border px-4 py-3.5 transition-[border-color,box-shadow] duration-150',
+        // Elevation, not an outline. A pending queue is the loud state: it keeps the
+        // tinted fill, while a clear one settles onto the same white card as everything
+        // else on the page.
+        'flex min-h-[132px] flex-col justify-between rounded-lg p-5 shadow-card transition-shadow duration-200 hover:shadow-hover',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        pending
-          ? tone === 'critical'
-            ? 'border-destructive/30 bg-destructive-soft hover:shadow-pop'
-            : 'border-warning/35 bg-warning-soft hover:shadow-pop'
-          : 'border-border bg-card hover:border-primary/35 hover:shadow-pop',
+        pending ? (tone === 'critical' ? 'bg-destructive-soft' : 'bg-warning-soft') : 'bg-card',
       )}
     >
-      <p className="text-caption font-medium text-muted-foreground">{label}</p>
-
-      {pending ? (
-        <p
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden
           className={cn(
-            'tnum mt-2 text-h1 leading-none',
-            tone === 'critical' ? 'text-destructive' : 'text-warning',
+            'icon-chip h-10 w-10 [&>svg]:h-5 [&>svg]:w-5',
+            pending
+              ? tone === 'critical'
+                ? 'bg-card text-destructive'
+                : 'bg-card text-warning'
+              : 'bg-muted text-muted-foreground',
           )}
         >
-          {count}
-        </p>
-      ) : (
-        <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-success">
-          <Check aria-hidden className="h-4 w-4" />
-          {clearLabel}
-        </p>
-      )}
+          {icon ?? <ListChecks />}
+        </span>
+        <p className="min-w-0 flex-1 text-sm font-medium text-foreground">{label}</p>
+      </div>
 
-      <span className="mt-2 inline-flex items-center gap-1 text-caption text-muted-foreground">
-        {openLabel}
-        <ArrowRight aria-hidden className="h-3.5 w-3.5" />
-      </span>
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
+        {pending ? (
+          <p
+            className={cn(
+              'tnum text-h1 leading-none',
+              tone === 'critical' ? 'text-destructive' : 'text-warning',
+            )}
+          >
+            {count}
+          </p>
+        ) : (
+          <p className="flex items-center gap-1.5 text-sm font-medium text-success">
+            <Check aria-hidden className="h-4 w-4 shrink-0" />
+            {clearLabel}
+          </p>
+        )}
+
+        <span className="inline-flex items-center gap-1 text-caption text-muted-foreground">
+          {openLabel}
+          <ArrowRight aria-hidden className="h-3.5 w-3.5" />
+        </span>
+      </div>
     </a>
   )
 }

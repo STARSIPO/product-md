@@ -89,24 +89,25 @@ export default async function ProductsPage({
   }
 
   return (
-    <div className="container py-6 md:py-8">
+    <div className="container py-8 md:py-10">
       <header>
         <h1 className="text-h1">{t.catalog.title}</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">{t.catalog.subtitle}</p>
       </header>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[264px_minmax(0,1fr)]">
+      <div className="mt-6 grid gap-4 lg:grid-cols-[264px_minmax(0,1fr)] lg:gap-6">
         {/* ------------------------------------------------- desktop sidebar */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-20 rounded-lg border border-border bg-card p-4">
-            <h2 className="mb-4 text-sm font-semibold">{t.filters.title}</h2>
+        <aside className="hidden min-w-0 lg:block">
+          {/* One panel, grouped by space — not a stack of outlined boxes. */}
+          <div className="surface sticky top-20 p-5">
+            <h2 className="mb-4 text-h3">{t.filters.title}</h2>
             <FilterPanel {...panelProps} />
           </div>
         </aside>
 
         <div className="min-w-0">
           {/* ------------------------------------------------------- toolbar */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
             <FilterSheet {...panelProps} />
 
             <p aria-live="polite" className="tnum text-sm text-muted-foreground">
@@ -130,7 +131,7 @@ export default async function ProductsPage({
           {/* ------------------------------------------------------- results */}
           {results.items.length === 0 ? (
             <EmptyState
-              className="mt-6 rounded-lg border border-border bg-card"
+              className="surface mt-6"
               icon={<PackageSearch aria-hidden />}
               title={t.catalog.emptyTitle}
               description={t.catalog.emptyText}
@@ -148,7 +149,9 @@ export default async function ProductsPage({
             />
           ) : (
             <>
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {/* Density is deliberate: 2 / 3 / 4 columns. A wholesale buyer comparing
+                  beef suppliers needs to see many at once. */}
+              <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
                 {results.items.map((product, index) => (
                   <ProductCard
                     key={product.id}
@@ -175,8 +178,10 @@ export default async function ProductsPage({
                 }}
               />
 
-              {/* The demand side of the marketplace, offered where the search ends. */}
-              <p className="mt-8 rounded-lg border border-dashed border-border bg-card px-4 py-5 text-center text-sm text-muted-foreground">
+              {/* The demand side of the marketplace, offered where the search ends.
+                  An inset block rather than a dashed outline — it recedes instead of
+                  competing with the grid above it. */}
+              <p className="surface-muted mt-8 px-4 py-5 text-center text-sm text-muted-foreground">
                 {t.catalog.emptyCreateRequest}{' '}
                 <Link
                   href={localePath(locale, 'requests', 'new')}

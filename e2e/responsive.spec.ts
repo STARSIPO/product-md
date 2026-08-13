@@ -58,7 +58,14 @@ test.describe('responsive layout', () => {
     }
   }
 
-  test('product cards stack to one column at 320px', async ({ page }) => {
+  /**
+   * The catalogue keeps two columns down to 320px. That is a deliberate density
+   * decision, not an accident: a wholesale buyer comparing beef suppliers needs to
+   * scan many listings at once, so the grid never collapses to a single column the
+   * way a consumer app's would. This test used to assert the opposite; it now guards
+   * the density against a well-meaning future simplification.
+   */
+  test('product cards keep two columns at 320px', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 800 })
     await page.goto('/ru/products')
 
@@ -76,8 +83,13 @@ test.describe('responsive layout', () => {
     expect(second).not.toBeNull()
 
     if (first && second) {
-      // Same column means the second card starts below the first, not beside it.
-      expect(second.y).toBeGreaterThan(first.y + first.height - 4)
+      // Side by side: same row, second card starts to the right of the first.
+      expect(Math.abs(second.y - first.y), 'the first two cards share a row').toBeLessThanOrEqual(2)
+      expect(second.x, 'the second card sits beside the first').toBeGreaterThan(first.x)
+
+      // Density is worth nothing if the cards are unreadable. 320px minus the container
+      // padding and one gap leaves ~140px per card — assert we are still in that range.
+      expect(first.width, 'cards stay wide enough to read').toBeGreaterThanOrEqual(130)
     }
   })
 

@@ -195,7 +195,7 @@ export default async function AdminCategoriesPage({
           </Link>
         </div>
 
-        <ul className="max-h-[70vh] overflow-y-auto rounded-lg border border-border bg-card py-1">
+        <ul className="surface max-h-[70vh] overflow-y-auto py-1">
           {categories.map((row) => {
             const active = row.id === selected?.id
             return (

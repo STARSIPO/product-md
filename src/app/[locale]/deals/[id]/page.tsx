@@ -80,7 +80,7 @@ export default async function DealDetailPage({
   facts.push({ label: t.deal.date, value: formatDate(deal.createdAt, locale) })
 
   return (
-    <div className="container py-8">
+    <div className="container py-10">
       <Breadcrumbs
         label={t.a11y.breadcrumb}
         items={[
@@ -114,11 +114,13 @@ export default async function DealDetailPage({
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-6">
           {/* ------------------------------------------------------- parties */}
-          <section aria-labelledby="deal-parties" className="rounded-lg border border-border bg-card">
+          <section aria-labelledby="deal-parties">
             <h2 id="deal-parties" className="sr-only">
               {t.deal.signatures}
             </h2>
-            <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            {/* Two cards separated by a gap — the divider grid was one box pretending to
+                be two, and the two parties are genuinely separate things. */}
+            <div className="grid gap-3 sm:grid-cols-2 md:gap-4">
               <Party
                 role={t.deal.buyer}
                 company={deal.buyerCompany}
@@ -143,21 +145,21 @@ export default async function DealDetailPage({
             <h2 id="deal-terms" className="text-h3">
               {t.deal.lineItems}
             </h2>
-            <dl className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+            {/* The row rules stay: this is a spec sheet whose lines must be told apart,
+                which rule 4 keeps. Only the surrounding outline goes. */}
+            <dl className="surface mt-3 divide-y divide-border">
               {facts.map((fact) => (
                 <div
                   key={fact.label}
-                  className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-2.5"
+                  className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3"
                 >
                   <dt className="text-sm text-muted-foreground">{fact.label}</dt>
                   <dd className="tnum text-sm font-medium">{fact.value}</dd>
                 </div>
               ))}
-              <div className="flex flex-wrap items-baseline justify-between gap-2 bg-muted/50 px-4 py-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-b-lg bg-muted/60 px-5 py-4">
                 <dt className="text-sm font-medium">{t.deal.total}</dt>
-                <dd className="tnum text-h3 font-semibold">
-                  {formatMoney(deal.totalBani, locale)}
-                </dd>
+                <dd className="tnum text-h3 font-semibold">{formatMoney(deal.totalBani, locale)}</dd>
               </div>
             </dl>
 
@@ -192,7 +194,7 @@ export default async function DealDetailPage({
             <h2 id="deal-history" className="text-h3">
               {t.deal.history}
             </h2>
-            <div className="mt-3">
+            <div className="surface mt-3 p-5">
               <DealTimeline events={deal.events} locale={locale} t={t} />
             </div>
           </section>
@@ -200,7 +202,7 @@ export default async function DealDetailPage({
 
         {/* ------------------------------------------------------------ aside */}
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-          <div className="rounded-lg border border-border bg-card p-4 shadow-card">
+          <div className="surface p-5">
             <DealActions
               dealId={deal.id}
               status={deal.status}
@@ -276,7 +278,7 @@ function Party({
   href: string
 }) {
   return (
-    <div className="p-4">
+    <div className="surface flex flex-col p-5">
       <p className="text-caption uppercase tracking-wide text-muted-foreground">{role}</p>
       <p className="mt-1 text-base font-medium">
         <Link href={href} className="hover:text-primary">
@@ -295,12 +297,14 @@ function Party({
       <p className="mt-1 text-caption text-muted-foreground">
         {[company.phone, company.email].filter(Boolean).join(' · ')}
       </p>
+      {/* Consent is the one fact a party block is read for, so it gets a pill rather
+          than another line of grey caption text. */}
       <p
-        className={`mt-2 inline-flex items-center gap-1 text-caption font-medium ${
-          confirmed ? 'text-success' : 'text-muted-foreground'
+        className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-medium ${
+          confirmed ? 'bg-success-soft text-success' : 'bg-muted text-muted-foreground'
         }`}
       >
-        {confirmed ? <Check className="h-3.5 w-3.5" aria-hidden /> : null}
+        {confirmed ? <Check className="h-3.5 w-3.5 shrink-0" aria-hidden /> : null}
         {confirmed ? confirmedLabel : notConfirmedLabel}
       </p>
     </div>

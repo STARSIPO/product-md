@@ -23,6 +23,7 @@ import {
   TwoFactorSettings,
   type SessionRow,
 } from './security-settings'
+import { SectionRail } from '@/components/dashboard/section-rail'
 
 /**
  * Account settings, in four sections instead of one scroll.
@@ -123,7 +124,7 @@ export default async function DashboardSettingsPage({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <h1 className="text-h1">{t.settings.title}</h1>
 
       <SettingsTabs locale={locale} active={tab} labels={labels} label={t.settings.tabsLabel} />
@@ -234,33 +235,15 @@ function SettingsTabs({
   const base = localePath(locale, 'dashboard', 'settings')
 
   return (
-    <nav
-      aria-label={label}
-      className="no-scrollbar -mx-4 overflow-x-auto border-b border-border px-4 sm:mx-0 sm:px-0"
-    >
-      <ul className="flex min-w-max items-end gap-1">
-        {TABS.map((tab) => {
-          const isActive = tab === active
-          return (
-            <li key={tab}>
-              <Link
-                href={tab === 'profile' ? base : `${base}?tab=${tab}`}
-                aria-current={isActive ? 'page' : undefined}
-                className={cn(
-                  'relative inline-flex min-h-[44px] items-center whitespace-nowrap rounded-t-sm px-3 pb-2.5 pt-2 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                  "after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:content-['']",
-                  isActive
-                    ? 'font-semibold text-primary after:bg-primary'
-                    : 'font-medium text-muted-foreground after:bg-transparent hover:text-foreground',
-                )}
-              >
-                {labels[tab]}
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
-    </nav>
+    <SectionRail
+      label={label}
+      items={TABS.map((tab) => ({
+        key: tab,
+        href: tab === 'profile' ? base : `${base}?tab=${tab}`,
+        label: labels[tab],
+        active: tab === active,
+      }))}
+    />
   )
 }
 
@@ -278,16 +261,19 @@ function Block({
   children: React.ReactNode
 }) {
   return (
-    <section aria-labelledby={id}>
-      <h2 id={id} className="text-h3">
-        {title}
-      </h2>
-      {description ? (
-        <p className="mb-3 mt-1 text-sm text-muted-foreground">{description}</p>
-      ) : (
-        <div className="mb-3" />
-      )}
-      <Card className={cn('p-4 sm:p-5', tone === 'destructive' && 'border-destructive/30')}>
+    <section aria-labelledby={id} className="space-y-3">
+      <div>
+        <h2 id={id} className="text-h3">
+          {title}
+        </h2>
+        {description ? (
+          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      {/* The only outline left on this page, and it is carrying meaning: a ring in the
+          destructive tone is what marks the block that deletes an account. A card that
+          is merely a card gets elevation instead. */}
+      <Card className={cn('p-4 sm:p-5', tone === 'destructive' && 'ring-1 ring-destructive/25')}>
         {children}
       </Card>
     </section>

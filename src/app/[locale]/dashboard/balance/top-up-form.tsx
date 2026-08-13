@@ -82,7 +82,7 @@ export function TopUpForm({
 
       <fieldset className="min-w-0 border-0 p-0">
         <legend className="mb-2 text-sm font-medium">{t.balance.presetsTitle}</legend>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-4">
           {presets.map((preset) => {
             const value = baniToInput(preset)
             const selected = current === value
@@ -98,10 +98,14 @@ export function TopUpForm({
                 aria-pressed={selected}
                 onClick={() => setValue('amountBani', value, { shouldValidate: true })}
                 className={cn(
-                  'flex min-h-[64px] flex-col items-start justify-center rounded-md border px-3 py-2 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                  // Unselected presets are inset blocks, not outlined boxes; the one
+                  // that is chosen is filled and ringed. An outline that only thickens
+                  // is a hard thing to see at a glance, and four identical boxes with
+                  // one slightly greener edge is exactly the wireframe look.
+                  'flex min-h-[68px] flex-col items-start justify-center rounded-md px-3 py-2 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                   selected
-                    ? 'border-primary bg-primary-soft'
-                    : 'border-input bg-card hover:border-primary/45',
+                    ? 'bg-primary-soft ring-2 ring-primary'
+                    : 'bg-muted/60 hover:bg-primary-soft/60',
                 )}
               >
                 <span className="tnum text-sm font-semibold">{formatMoney(preset, locale)}</span>

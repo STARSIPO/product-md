@@ -28,8 +28,11 @@
     --color-accent-soft: 249 240 232;
     --color-accent-foreground: 255 255 255;
 
-    --color-border: 226 226 221;
-    --color-input: 214 214 209;
+    /* Borders became a hairline: surfaces are now separated by elevation and space.
+       A visible outline on every card is what made the product look like a wireframe. */
+    --color-border: 235 235 231;
+    /* Inputs keep a stronger edge — a form field must read as something you can type in. */
+    --color-input: 213 213 207;
     --color-ring: 15 107 69;
 
     --color-success: 22 122 76;
@@ -81,6 +84,32 @@
 }
 
 @layer components {
+  /**
+   * The standard raised surface: white, rounded, lifted by shadow, no outline.
+   *
+   * Replaces the `rounded-lg border border-border bg-card shadow-card` string that was
+   * repeated ~175 times. Having it in one place is what makes the elevation of the
+   * whole product adjustable from a single rule.
+   */
+  .surface {
+    @apply rounded-lg bg-card shadow-card;
+  }
+
+  /** Interactive surface — lifts slightly on hover. No movement, no scaling. */
+  .surface-interactive {
+    @apply surface transition-shadow duration-200 hover:shadow-hover;
+  }
+
+  /** Inset surface for secondary blocks that should recede rather than float. */
+  .surface-muted {
+    @apply rounded-lg bg-muted/60;
+  }
+
+  /** Soft tinted circle behind an icon — used for category and feature glyphs. */
+  .icon-chip {
+    @apply grid shrink-0 place-items-center rounded-full bg-primary-soft text-primary;
+  }
+
   .skeleton {
     @apply relative overflow-hidden rounded bg-muted;
   }

@@ -64,10 +64,15 @@ export function MobileNav({
               >
                 <span
                   className={cn(
-                    'grid h-7 w-7 place-items-center rounded-full',
+                    // h-7 is load-bearing: it keeps the bar at 67.8px, inside the 68px
+                    // that `.pb-safe-nav` reserves. Growing it pushes the footer under
+                    // the bar — navigation.spec.ts asserts exactly this.
+                    'grid h-7 w-7 place-items-center rounded-full transition-colors',
                     'primary' in item && item.primary
                       ? 'bg-primary text-primary-foreground'
-                      : undefined,
+                      : active
+                        ? 'bg-primary-soft text-primary'
+                        : undefined,
                   )}
                 >
                   <Icon className="h-[18px] w-[18px]" aria-hidden />

@@ -4,7 +4,7 @@ import { localePath, type Locale } from '@/lib/i18n/config'
 import { fmt, type Dictionary } from '@/lib/i18n'
 import { formatRelative } from '@/lib/i18n/format'
 import { decodeRecord } from '@/lib/json'
-import { Avatar, Input } from '@/components/ui'
+import { Avatar, Input, buttonVariants } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 /**
@@ -86,7 +86,7 @@ export function ConversationList({
         <button
           type="submit"
           aria-label={t.common.search}
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-input bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className={buttonVariants({ variant: 'outline', size: 'icon' })}
         >
           <Search className="h-4 w-4" aria-hidden />
         </button>

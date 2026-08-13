@@ -132,7 +132,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
         </h2>
         {/* Stacked and full width on a phone, side by side from `sm`. A row of three
             buttons at 320px is three unreadable buttons. */}
-        <div className="grid gap-2 sm:flex sm:flex-wrap">
+        <div className="grid gap-3 sm:flex sm:flex-wrap">
           {user.isSeller ? (
             <Link
               href={localePath(locale, 'products', 'new')}

@@ -7,8 +7,8 @@ export default function Loading() {
       <Skeleton className="h-9 w-48" />
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <div className="border-b border-border p-3">
+        <div className="surface overflow-hidden">
+          <div className="p-3">
             <Skeleton className="h-[42px] w-full rounded-md" />
           </div>
           <ul className="divide-y divide-border">
@@ -25,7 +25,7 @@ export default function Loading() {
           </ul>
         </div>
 
-        <div className="hidden rounded-lg border border-dashed border-border bg-card lg:block" />
+        <div className="surface-muted hidden lg:block" />
       </div>
     </div>
   )

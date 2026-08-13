@@ -6,7 +6,7 @@ import { FileText, ImageIcon, Loader2, Paperclip, Send, X } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
 import { MAX_DOCUMENT_BYTES } from '@/lib/constants'
 import { sendMessageAction } from '@/server/actions/messages'
-import { Alert, Button } from '@/components/ui'
+import { Alert, Button, buttonVariants } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 /**
@@ -168,7 +168,7 @@ export function MessageComposer({
           {attachments.map((file) => (
             <li
               key={file.key}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1 text-caption"
+              className="surface-muted flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-caption"
             >
               {file.mimeType === 'application/pdf' ? (
                 <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -207,7 +207,11 @@ export function MessageComposer({
           disabled={busy || attachments.length >= MAX_ATTACHMENTS}
           aria-label={t.chat.attach}
           title={fmt(t.chat.attachHint, { size: MAX_MB })}
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-input bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-55"
+          className={buttonVariants({
+            variant: 'outline',
+            size: 'icon',
+            className: 'text-muted-foreground hover:text-foreground',
+          })}
         >
           {uploading ? (
             <Loader2 className="h-[18px] w-[18px] animate-spin" aria-hidden />

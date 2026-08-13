@@ -62,7 +62,7 @@ export default async function DashboardOffersPage({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-h1">{t.offer.myOffers}</h1>
         <Link
@@ -148,7 +148,7 @@ export default async function DashboardOffersPage({
           <ul className="space-y-3 md:hidden">
             {items.map((offer) => (
               <li key={offer.id}>
-                <Card className="p-3.5">
+                <Card className="p-4">
                   <Link
                     href={localePath(locale, 'requests', offer.request.slug)}
                     className="block text-sm font-medium leading-snug"

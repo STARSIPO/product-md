@@ -90,7 +90,9 @@ export function FilterPanel({
       method="get"
       action={action}
       aria-label={t.filters.title}
-      className={cn('space-y-5', className)}
+      // Groups are told apart by space alone — the panel is one surface, not a stack of
+      // outlined boxes. `min-w-0` keeps the selects from widening the sidebar column.
+      className={cn('min-w-0 space-y-5', className)}
     >
       {/* Carried through so filtering never silently drops the query or the sort. */}
       {values.q ? <input type="hidden" name="q" value={values.q} /> : null}
@@ -231,7 +233,7 @@ export function FilterPanel({
       </fieldset>
 
       {!hideActions ? (
-        <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+        <div className="flex flex-wrap gap-2 pt-1">
           <Button type="submit" fullWidth>
             {t.filters.apply}
           </Button>

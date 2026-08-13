@@ -144,7 +144,7 @@ export function CategoryEditor({
   const isNew = values.id === ''
 
   return (
-    <section className={cn('rounded-lg border border-border bg-card p-4', FIELDS)}>
+    <section className={cn('surface p-5', FIELDS)}>
       <h2 className="text-h3">{isNew ? t.admin.newCategory : t.admin.editCategory}</h2>
 
       {error ? (
@@ -408,7 +408,7 @@ function AttributeCard({ attribute }: { attribute: AttributeFormValues }) {
   const hasOptions = values.type === 'SELECT' || values.type === 'MULTISELECT'
 
   return (
-    <article className={cn('rounded-lg border border-border bg-card p-4', FIELDS)}>
+    <article className={cn('surface p-5', FIELDS)}>
       <h3 className="text-sm font-semibold">
         {isNew ? t.admin.newAttribute : `${values.labelRu} · ${values.key}`}
       </h3>
@@ -612,7 +612,7 @@ function OptionList({
   }
 
   return (
-    <div className="mt-4 border-t border-border pt-3">
+    <div className="mt-5">
       <h4 className="text-sm font-semibold">{t.admin.optionsTitle}</h4>
       <ul className="mt-2 space-y-2">
         {options.map((option) => (
@@ -875,7 +875,7 @@ export function SuggestTester({ locale }: { locale: 'ru' | 'ro' }) {
   }
 
   return (
-    <section className={cn('rounded-lg border border-border bg-card p-4', FIELDS)}>
+    <section className={cn('surface p-5', FIELDS)}>
       <h2 className="text-h3">{t.admin.testQuery}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t.admin.testQueryHint}</p>
 
@@ -904,7 +904,7 @@ export function SuggestTester({ locale }: { locale: 'ru' | 'ro' }) {
         results.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">{t.admin.testQueryEmpty}</p>
         ) : (
-          <ol className="mt-3 divide-y divide-border rounded-md border border-border">
+          <ol className="surface-muted mt-3 divide-y divide-border rounded-md">
             {results.map((item) => (
               <li key={item.categoryId} className="flex flex-wrap items-baseline gap-2 px-3 py-2">
                 <span className="text-sm font-medium">{item.name}</span>

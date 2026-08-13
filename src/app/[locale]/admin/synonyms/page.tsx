@@ -159,7 +159,7 @@ export default async function AdminSynonymsPage({
           {fmt(t.admin.totalRows, { count: total })}
         </p>
 
-        <div className="divide-y divide-border rounded-lg border border-border bg-card">
+        <div className="surface divide-y divide-border">
           {rows.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-muted-foreground">{t.admin.empty}</p>
           ) : (

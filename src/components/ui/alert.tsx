@@ -5,18 +5,22 @@ import { cn } from '@/lib/utils'
 
 export type AlertVariant = 'info' | 'success' | 'warning' | 'destructive'
 
+/**
+ * The tint alone carries the variant — an outline on top of a coloured fill was one
+ * line too many. The icon sits in a white chip so it reads as a glyph, not a bullet.
+ */
 const VARIANTS: Record<AlertVariant, { box: string; icon: string }> = {
-  info: { box: 'border-primary/20 bg-primary-soft', icon: 'text-primary' },
-  success: { box: 'border-success/20 bg-success-soft', icon: 'text-success' },
-  warning: { box: 'border-warning/25 bg-warning-soft', icon: 'text-warning' },
-  destructive: { box: 'border-destructive/25 bg-destructive-soft', icon: 'text-destructive' },
+  info: { box: 'bg-primary-soft', icon: 'text-primary' },
+  success: { box: 'bg-success-soft', icon: 'text-success' },
+  warning: { box: 'bg-warning-soft', icon: 'text-warning' },
+  destructive: { box: 'bg-destructive-soft', icon: 'text-destructive' },
 }
 
 const DEFAULT_ICONS: Record<AlertVariant, ReactNode> = {
-  info: <Info aria-hidden="true" className="h-[18px] w-[18px]" />,
-  success: <CheckCircle2 aria-hidden="true" className="h-[18px] w-[18px]" />,
-  warning: <AlertTriangle aria-hidden="true" className="h-[18px] w-[18px]" />,
-  destructive: <AlertCircle aria-hidden="true" className="h-[18px] w-[18px]" />,
+  info: <Info aria-hidden="true" />,
+  success: <CheckCircle2 aria-hidden="true" />,
+  warning: <AlertTriangle aria-hidden="true" />,
+  destructive: <AlertCircle aria-hidden="true" />,
 }
 
 export interface AlertProps {
@@ -33,16 +37,15 @@ export function Alert({ variant, title, children, icon, className }: AlertProps)
   return (
     <div
       role={variant === 'destructive' ? 'alert' : 'status'}
-      className={cn(
-        'flex gap-3 rounded-md border p-3.5 text-sm text-foreground',
-        tone.box,
-        className,
-      )}
+      className={cn('flex gap-3 rounded-lg p-4 text-sm text-foreground', tone.box, className)}
     >
-      <span aria-hidden="true" className={cn('mt-[1px] shrink-0', tone.icon)}>
+      <span
+        aria-hidden="true"
+        className={cn('icon-chip h-9 w-9 bg-card [&>svg]:h-5 [&>svg]:w-5', tone.icon)}
+      >
         {icon ?? DEFAULT_ICONS[variant]}
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 self-center">
         {title ? <p className="font-semibold">{title}</p> : null}
         <div className={cn('text-sm text-foreground/90', title && 'mt-0.5')}>{children}</div>
       </div>

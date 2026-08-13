@@ -58,7 +58,8 @@ export function Tooltip({ content, children, side = 'top', className }: TooltipP
           role="tooltip"
           id={id}
           className={cn(
-            'pointer-events-none absolute z-50 w-max max-w-[16rem] animate-fade-in rounded-md bg-foreground px-2.5 py-1.5 text-caption text-background shadow-pop',
+            // rounded-sm, not the card radius: 12px on a 28px-tall label reads bulbous.
+            'pointer-events-none absolute z-50 w-max max-w-[16rem] animate-fade-in rounded-sm bg-foreground px-2.5 py-1.5 text-caption text-background shadow-pop',
             SIDES[side],
             className,
           )}

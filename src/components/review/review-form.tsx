@@ -99,11 +99,11 @@ export function ReviewForm({
 
       <fieldset className="min-w-0 border-0 p-0">
         <legend className="mb-1 text-sm font-medium">{t.review.breakdown}</legend>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {criteria.map((code) => (
             <div
               key={code}
-              className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-1 last:border-0"
+              className="flex flex-wrap items-center justify-between gap-2 py-1"
             >
               <span className="text-sm">{labels[code] ?? code}</span>
               <RatingInput

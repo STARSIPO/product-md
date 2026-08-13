@@ -148,7 +148,7 @@ export default async function AdminCompanyPage({
       </Link>
 
       {/* --------------------------------------------------------- identity */}
-      <section className="rounded-lg border border-border bg-card p-4">
+      <section className="surface p-5">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-h3">{company.displayName}</h2>
           <StatusBadge
@@ -195,7 +195,7 @@ export default async function AdminCompanyPage({
           </div>
         </dl>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+        <div className="mt-5 flex flex-wrap items-center gap-2">
           <CompanyActions
             companyId={company.id}
             status={company.status}
@@ -221,7 +221,7 @@ export default async function AdminCompanyPage({
           </Alert>
         )}
 
-        <div className="mt-3 rounded-lg border border-border bg-card p-4">
+        <div className="surface mt-3 p-4">
           <p className="tnum text-h2">{formatMoney(company.balanceBani, locale)}</p>
           <p className="mt-1 text-sm text-muted-foreground">
             {company.trialEndsAt
@@ -240,7 +240,7 @@ export default async function AdminCompanyPage({
         </div>
 
         <h3 className="mt-4 text-sm font-semibold">{t.admin.ledgerRecent}</h3>
-        <ul className="mt-2 divide-y divide-border rounded-lg border border-border bg-card">
+        <ul className="surface mt-3 divide-y divide-border">
           {ledger.length === 0 ? (
             <li className="px-4 py-8 text-center text-sm text-muted-foreground">
               {t.balance.emptyHistory}
@@ -282,7 +282,7 @@ export default async function AdminCompanyPage({
       {/* ---------------------------------------------------------- members */}
       <section>
         <h2 className="text-h3">{t.admin.companyMembers}</h2>
-        <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+        <ul className="surface mt-3 divide-y divide-border">
           {company.members.length === 0 ? (
             <li className="px-4 py-8 text-center text-sm text-muted-foreground">
               {t.admin.empty}
@@ -311,7 +311,7 @@ export default async function AdminCompanyPage({
       {/* ------------------------------------------------------ audit trail */}
       <section>
         <h2 className="text-h3">{t.admin.changeHistory}</h2>
-        <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+        <ul className="surface mt-3 divide-y divide-border">
           {history.items.length === 0 ? (
             <li className="px-4 py-8 text-center text-sm text-muted-foreground">
               {t.admin.auditEmpty}

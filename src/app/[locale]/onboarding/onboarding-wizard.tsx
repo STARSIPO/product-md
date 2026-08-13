@@ -230,12 +230,9 @@ export function OnboardingWizard({
   if (done) {
     return (
       <div className="space-y-5" aria-live="polite">
-        <div className="flex flex-col items-center rounded-lg border border-border bg-card px-6 py-10 text-center">
-          <span
-            aria-hidden
-            className="mb-4 grid h-12 w-12 place-items-center rounded-full bg-success-soft text-success"
-          >
-            <PartyPopper className="h-5 w-5" />
+        <div className="surface flex flex-col items-center px-6 py-10 text-center">
+          <span aria-hidden className="icon-chip mb-4 h-12 w-12 bg-success-soft text-success">
+            <PartyPopper className="h-6 w-6" />
           </span>
           <h2 className="text-h2">{t.onboarding.finishTitle}</h2>
           <p className="mt-1.5 text-sm text-muted-foreground">{t.onboarding.finishText}</p>
@@ -483,8 +480,10 @@ export function OnboardingWizard({
         </div>
       ) : null}
 
-      {/* ---------------------------------------------------------- navigation */}
-      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+      {/* ---------------------------------------------------------- navigation
+          Back / next sit below the step's own card, so the card edge already ends the
+          step; the extra rule above them was a second boundary in the same place. */}
+      <div className="flex flex-wrap items-center gap-2 pt-1">
         {step > 0 ? (
           <Button variant="outline" onClick={() => setStep((current) => current - 1)}>
             {t.common.back}

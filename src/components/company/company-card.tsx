@@ -34,7 +34,7 @@ export function CompanyCard({
   )
 
   return (
-    <article className="group relative flex gap-3.5 rounded-lg border border-border bg-card p-4 shadow-card transition-colors hover:border-muted-foreground/30">
+    <article className="surface-interactive group relative flex gap-4 p-4 md:p-5">
       <Avatar src={company.logoKey ?? undefined} name={company.displayName} size="lg" />
 
       <div className="min-w-0 flex-1">

@@ -184,7 +184,7 @@ export default async function ModerationQueuePage({
 
         {queue.items.length === 0 ? (
           <EmptyState
-            className="rounded-lg border border-border bg-card"
+            className="surface"
             icon={<ListChecks aria-hidden />}
             title={t.moderation.empty}
             description={t.moderation.emptyText}
@@ -218,7 +218,7 @@ export default async function ModerationQueuePage({
       {/* ------------------------------------------------- decision journal */}
       <section>
         <h2 className="text-h3">{t.moderation.decisionLog}</h2>
-        <ol className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+        <ol className="surface mt-3 divide-y divide-border">
           {journal.items.length === 0 ? (
             <li className="px-4 py-8 text-center text-sm text-muted-foreground">
               {t.admin.auditEmpty}

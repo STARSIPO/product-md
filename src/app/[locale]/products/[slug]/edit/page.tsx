@@ -15,11 +15,12 @@ import type { AttributeValue } from '@/components/category/attribute-fields'
 import type { PickedCategory } from '@/components/category/category-picker'
 import {
   ProductWizard,
-  emptyWizardValues,
   type DistrictOption,
   type DocumentOption,
-  type WizardValues,
 } from '@/components/product-form/product-wizard'
+// Not from `product-wizard`: that module is `'use client'`, and a value imported across
+// the boundary arrives here as a client reference rather than the function itself.
+import { emptyWizardValues, type WizardValues } from '@/components/product-form/wizard-values'
 
 /**
  * Editing an existing listing.

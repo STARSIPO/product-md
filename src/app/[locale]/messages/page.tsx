@@ -73,11 +73,11 @@ export default async function MessagesPage({
       <h1 className="text-h1">{t.chat.title}</h1>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="surface overflow-hidden">
           <ConversationList items={items} locale={locale} t={t} query={query} />
         </div>
 
-        <div className="hidden rounded-lg border border-dashed border-border bg-card lg:block">
+        <div className="surface-muted hidden lg:block">
           <EmptyState
             icon={<MessageSquare aria-hidden />}
             title={items.length === 0 ? t.chat.empty : t.chat.emptyThread}

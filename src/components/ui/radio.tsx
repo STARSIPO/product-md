@@ -39,15 +39,17 @@ export function RadioGroup({
   className,
 }: RadioGroupProps) {
   return (
-    <div className={cn('grid gap-2', COLUMNS[columns], className)}>
+    <div className={cn('grid gap-3', COLUMNS[columns], className)}>
       {options.map((option) => (
         <label
           key={option.value}
           className={cn(
-            'relative flex min-h-[56px] cursor-pointer items-start gap-3 rounded-md border border-input bg-card p-3 transition-colors duration-150',
-            'hover:border-primary/45 has-[:checked]:border-primary has-[:checked]:bg-primary-soft',
+            // Unselected reads as a raised card (elevation, transparent edge); selected
+            // swaps elevation for the tint + outline that actually means something.
+            'relative flex min-h-[56px] cursor-pointer items-start gap-3 rounded-md border border-transparent bg-card p-4 shadow-card transition-colors duration-150 hover:border-primary/40',
+            'has-[:checked]:border-primary has-[:checked]:bg-primary-soft has-[:checked]:shadow-none',
             'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-background',
-            'has-[:disabled]:cursor-not-allowed has-[:disabled]:bg-muted has-[:disabled]:opacity-70',
+            'has-[:disabled]:cursor-not-allowed has-[:disabled]:bg-muted has-[:disabled]:opacity-70 has-[:disabled]:shadow-none',
           )}
         >
           <input

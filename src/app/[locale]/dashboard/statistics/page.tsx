@@ -4,7 +4,6 @@ import { BarChart3 } from 'lucide-react'
 import { getDictionary, resolveLocale, fmt } from '@/lib/i18n'
 import { localePath } from '@/lib/i18n/config'
 import { formatDateShort, formatNumber } from '@/lib/i18n/format'
-import { cn } from '@/lib/utils'
 import { requireSeller } from '@/server/auth/guards'
 import {
   ANALYTICS_PERIODS,
@@ -14,6 +13,7 @@ import {
 import { Card, EmptyState, StatusBadge } from '@/components/ui'
 import { StatTile } from '@/components/dashboard/stat-tile'
 import { DayChart } from '@/components/dashboard/day-chart'
+import { SectionRail } from '@/components/dashboard/section-rail'
 
 /**
  * Statistics — everything numeric about this company's listings.
@@ -68,34 +68,28 @@ export default async function DashboardStatisticsPage({
   const recentDays = [...analytics.days].reverse()
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
         <h1 className="text-h1">{t.analytics.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t.analytics.subtitle}</p>
       </div>
 
       {/* The period lives in the URL so a refresh keeps it and a link carries it.
-          Full width on a phone: three targets sharing the row beat three cramped ones. */}
-      <nav aria-label={t.analytics.period}>
-        <ul className="flex gap-1 rounded-md border border-border bg-card p-1">
-          {ANALYTICS_PERIODS.map((value) => (
-            <li key={value} className="min-w-0 flex-1 sm:flex-initial">
-              <Link
-                href={`${base}?period=${value}`}
-                aria-current={value === period ? 'page' : undefined}
-                className={cn(
-                  'flex min-h-[44px] items-center justify-center rounded px-3 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  value === period
-                    ? 'bg-primary-soft font-semibold text-primary'
-                    : 'font-medium text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {periodLabels[value] ?? String(value)}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+          The same rail as every other section strip in the cabinet: the segmented
+          control in a bordered tray was a third tab idiom in a product that needs one.
+
+          A scroller rather than three equal thirds, because "30 de zile" in a 90px
+          third at 320px is a label hanging out of its own pill — and anything hanging
+          out sideways is what puts a horizontal scrollbar on the page. */}
+      <SectionRail
+        label={t.analytics.period}
+        items={ANALYTICS_PERIODS.map((value) => ({
+          key: String(value),
+          href: `${base}?period=${value}`,
+          label: periodLabels[value] ?? String(value),
+          active: value === period,
+        }))}
+      />
 
       {!analytics.hasData ? (
         <Card>
@@ -108,7 +102,10 @@ export default async function DashboardStatisticsPage({
       ) : (
         <>
           <section aria-label={t.analytics.periodTotals}>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+            {/* Four counts, so four columns as soon as there is room for them: these
+                are the totals the rest of the page explains, and splitting them over
+                two rows until `xl` made them read as two unrelated pairs. */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4">
               <StatTile
                 label={t.analytics.views}
                 value={formatNumber(analytics.totals.views, locale, 0)}
@@ -138,10 +135,15 @@ export default async function DashboardStatisticsPage({
             </h2>
 
             <Card className="p-4 sm:p-5">
-              <DayChart
-                days={analytics.days}
-                label={fmt(t.analytics.chartLabel, { period: periodLabel })}
-              />
+              {/* The bars sit in a tinted plot area rather than directly on the card:
+                  it gives the series a floor to stand on, which is what a chart needs
+                  and what an outline round the whole card was standing in for. */}
+              <div className="surface-muted rounded-md px-3 py-3">
+                <DayChart
+                  days={analytics.days}
+                  label={fmt(t.analytics.chartLabel, { period: periodLabel })}
+                />
+              </div>
 
               {/* ------------------------------------------- desktop: a real table */}
               <div className="mt-4 hidden max-h-80 overflow-y-auto md:block">
@@ -204,10 +206,7 @@ export default async function DashboardStatisticsPage({
                 {recentDays
                   .filter((day) => day.views > 0 || day.contacts > 0 || day.favorites > 0)
                   .map((day) => (
-                    <li
-                      key={day.day}
-                      className="rounded-md border border-border px-3 py-2.5"
-                    >
+                    <li key={day.day} className="surface-muted rounded-md px-3 py-2.5">
                       <p className="text-sm font-medium">
                         {formatDateShort(`${day.day}T12:00:00`, locale)}
                       </p>
@@ -243,12 +242,14 @@ export default async function DashboardStatisticsPage({
             </h2>
 
             {analytics.top.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+              <p className="surface-muted px-4 py-8 text-center text-sm text-muted-foreground">
                 {t.analytics.noData}
               </p>
             ) : (
-              <Card>
-                <ul className="divide-y divide-border">
+              <Card className="p-2">
+                {/* A gap between rows instead of a rule: each row is already a distinct
+                    block with its own share bar, so the hairlines only added noise. */}
+                <ul className="space-y-1">
                   {analytics.top.map((product) => {
                     const share =
                       analytics.totals.views > 0
@@ -259,7 +260,7 @@ export default async function DashboardStatisticsPage({
                       <li key={product.id}>
                         <Link
                           href={localePath(locale, 'products', product.slug)}
-                          className="block px-3 py-3 transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-4"
+                          className="block rounded-md px-3 py-3 transition-colors duration-150 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                         >
                           <span className="clamp-2 block text-sm font-medium leading-snug">
                             {product.title}

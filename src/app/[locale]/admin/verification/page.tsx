@@ -200,7 +200,7 @@ export default async function AdminVerificationPage({
       {/* ------------------------------------------------------ expiry watch */}
       <section>
         <h2 className="text-h3">{t.admin.expiringSoon}</h2>
-        <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+        <ul className="surface mt-3 divide-y divide-border">
           {expiring.length === 0 ? (
             <li className="px-4 py-8 text-center text-sm text-muted-foreground">
               {t.admin.allClear}

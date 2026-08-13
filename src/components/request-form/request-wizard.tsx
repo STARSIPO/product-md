@@ -446,7 +446,7 @@ export function RequestWizard({
                   inputMode="decimal"
                   step="any"
                   min="0"
-                  className="flex-1"
+                  className="min-w-0 flex-1"
                   value={draft.quantity}
                   onChange={(event) => update('quantity', event.target.value)}
                   invalid={Boolean(fieldErrors['quantity'])}
@@ -745,32 +745,38 @@ export function RequestWizard({
               multiple
               accept="application/pdf,image/jpeg,image/png"
               onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
-              className="block w-full cursor-pointer rounded-md border border-input bg-card px-3 py-2.5 text-sm file:mr-3 file:min-h-[32px] file:rounded file:border-0 file:bg-muted file:px-3 file:text-sm file:text-foreground"
+              className="block min-h-[44px] w-full cursor-pointer rounded-md border border-input bg-card px-3 py-2.5 text-sm file:mr-3 file:min-h-[32px] file:rounded-sm file:border-0 file:bg-muted file:px-3 file:text-sm file:text-foreground"
             />
           </Field>
 
           {files.length > 0 ? (
-            <ul className="space-y-1.5">
+            <ul className="space-y-2">
               {files.map((file) => (
-                <li key={file.name} className="flex items-center gap-2 text-sm">
+                <li
+                  key={file.name}
+                  className="surface-muted flex min-h-[44px] items-center gap-2.5 rounded-md px-3 py-2 text-sm"
+                >
                   <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="truncate">{file.name}</span>
+                  <span className="min-w-0 truncate">{file.name}</span>
                 </li>
               ))}
             </ul>
           ) : null}
 
           {savedAttachments.length > 0 ? (
-            <ul className="space-y-1.5">
+            <ul className="space-y-2">
               {savedAttachments.map((attachment) => (
-                <li key={attachment.id} className="flex items-center gap-2 text-sm">
+                <li
+                  key={attachment.id}
+                  className="surface-muted flex items-center gap-2.5 rounded-md py-1 pl-3 pr-1 text-sm"
+                >
                   <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="truncate">{attachment.fileName}</span>
+                  <span className="min-w-0 truncate">{attachment.fileName}</span>
                   <button
                     type="button"
                     onClick={() => removeSavedAttachment(attachment.id)}
                     aria-label={`${t.common.delete}: ${attachment.fileName}`}
-                    className="ml-auto grid h-11 w-11 shrink-0 place-items-center rounded text-muted-foreground hover:text-destructive"
+                    className="ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-destructive-soft hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" aria-hidden />
                   </button>
@@ -789,7 +795,7 @@ export function RequestWizard({
             <p className="mt-1 text-sm text-muted-foreground">{t.requestForm.previewHint}</p>
           </div>
 
-          <div className="rounded-lg border border-border bg-card p-4">
+          <div className="surface p-5">
             <h3 className="text-h3">{draft.title}</h3>
             {draft.category ? (
               <p className="mt-1 text-caption text-muted-foreground">{draft.category.trail}</p>
@@ -849,7 +855,9 @@ export function RequestWizard({
       ) : null}
 
       {/* --------------------------------------------------------- navigation */}
-      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+      {/* The rule above the buttons was decoration: `space-y-6` already separates the
+          step body from its controls, and one fewer line is one less wireframe cue. */}
+      <div className="flex flex-wrap items-center gap-2 pt-2">
         {step > 0 ? (
           <Button variant="outline" onClick={() => setStep((current) => current - 1)}>
             {t.common.back}

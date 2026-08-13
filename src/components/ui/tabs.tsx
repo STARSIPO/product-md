@@ -41,7 +41,12 @@ export function Tabs({ tabs, active, onChange, label, className }: TabsProps) {
   }
 
   return (
-    <div className={cn('no-scrollbar w-full overflow-x-auto border-b border-border', className)}>
+    /*
+     * `min-w-0` is mandatory: as a flex/grid child the scroller would otherwise take
+     * its content width and push the page into horizontal scroll at 320px.
+     * The container rule is gone — the active tab is carried by weight + underline.
+     */
+    <div className={cn('no-scrollbar w-full min-w-0 overflow-x-auto', className)}>
       <div role="tablist" aria-label={label} className="flex min-w-max items-end gap-1">
         {tabs.map((tab, index) => {
           const selected = tab.id === active
@@ -58,8 +63,8 @@ export function Tabs({ tabs, active, onChange, label, className }: TabsProps) {
               onClick={() => onChange(tab.id)}
               onKeyDown={(event) => handleKeyDown(event, index)}
               className={cn(
-                'relative inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap rounded-t-sm px-3 pb-2.5 pt-2 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                'after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:transition-colors after:duration-150',
+                'relative inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap rounded-md px-3 pb-2.5 pt-2 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                'after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:transition-colors after:duration-150',
                 selected
                   ? 'font-semibold text-primary after:bg-primary'
                   : 'font-medium text-muted-foreground after:bg-transparent hover:text-foreground',

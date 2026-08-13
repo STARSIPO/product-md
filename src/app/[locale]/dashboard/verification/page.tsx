@@ -3,6 +3,7 @@ import { AlertTriangle, FileText, Lock, ShieldCheck } from 'lucide-react'
 import { getDictionary, resolveLocale, fmt } from '@/lib/i18n'
 import { localePath } from '@/lib/i18n/config'
 import { formatDateShort } from '@/lib/i18n/format'
+import { cn } from '@/lib/utils'
 import { VERIFICATION_TYPES } from '@/lib/constants'
 import { requireCompany } from '@/server/auth/guards'
 import { db } from '@/server/db'
@@ -108,24 +109,31 @@ export default async function DashboardVerificationPage({
         </h2>
         <p className="mb-3 text-sm text-muted-foreground">{t.verification.badgesHint}</p>
 
-        <Card>
-          <ul className="divide-y divide-border">
+        <Card className="p-2">
+          {/* Six claims, each either granted or not. Space tells them apart; the tick
+              in its chip is what says which is which, so the hairlines were doing no
+              work the icon was not already doing better. */}
+          <ul className="space-y-1">
             {VERIFICATION_TYPES.map((type) => {
               const badge = badgeByType.get(type)
+              const granted = badge?.status === 'APPROVED'
               return (
                 <li
                   key={type}
-                  className="flex min-h-[56px] flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3"
+                  className="flex min-h-[56px] flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md px-3 py-2.5"
                 >
-                  <span className="flex min-w-0 flex-1 items-center gap-2 text-sm">
-                    <ShieldCheck
+                  <span className="flex min-w-0 flex-1 items-center gap-3 text-sm">
+                    <span
                       aria-hidden
-                      className={
-                        badge?.status === 'APPROVED'
-                          ? 'h-4 w-4 shrink-0 text-success'
-                          : 'h-4 w-4 shrink-0 text-muted-foreground'
-                      }
-                    />
+                      className={cn(
+                        'icon-chip h-9 w-9',
+                        granted
+                          ? 'bg-success-soft text-success'
+                          : 'bg-muted text-muted-foreground',
+                      )}
+                    >
+                      <ShieldCheck className="h-[18px] w-[18px]" />
+                    </span>
                     <span className="min-w-0 truncate">{badgeTypes[type] ?? type}</span>
                   </span>
 
@@ -236,7 +244,7 @@ export default async function DashboardVerificationPage({
                     ) : null}
 
                     {document.moderatorComment ? (
-                      <div className="mt-3 rounded-md border border-border bg-muted/50 px-3 py-2">
+                      <div className="surface-muted mt-3 rounded-md px-3 py-2">
                         <p className="text-caption font-medium text-muted-foreground">
                           {t.verification.moderatorComment}
                         </p>
@@ -259,7 +267,7 @@ export default async function DashboardVerificationPage({
                       </a>
                     </p>
 
-                    <div className="mt-2 border-t border-border pt-3">
+                    <div className="mt-2">
                       <DocumentActions documentId={document.id} isPublic={document.isPublic} />
                     </div>
 

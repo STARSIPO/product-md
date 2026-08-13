@@ -104,7 +104,7 @@ export default async function ConversationPage({
       </Link>
 
       <div className="mt-2 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
+        <div className="surface flex min-h-0 flex-col overflow-hidden">
           {/* ------------------------------------------------------- thread header */}
           <div className="flex items-center gap-3 border-b border-border px-3 py-3">
             <Avatar
@@ -147,7 +147,7 @@ export default async function ConversationPage({
                 data={contextData}
                 locale={locale}
                 t={t}
-                className="rounded-lg border border-border bg-background p-3"
+                className="surface-muted p-3"
               />
             </div>
           </details>

@@ -4,14 +4,21 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { cn } from '@/lib/utils'
+import { RailBadge, RailPill } from '@/components/dashboard/section-rail'
 
 /**
  * Dashboard navigation.
  *
  * One list, two shapes: a vertical rail on desktop and a horizontally scrollable strip
- * of tabs on a phone. A phone cannot show eleven sections at once, and collapsing them
+ * of pills on a phone. A phone cannot show eleven sections at once, and collapsing them
  * behind a hamburger inside a page that is already behind a hamburger buries the whole
  * cabinet.
+ *
+ * Both shapes mark the current section by fill rather than by an outline or a rule: a
+ * solid pill in the scroller, a soft-tinted block in the rail. The rail is a static
+ * column where one strong green block out of eleven rows would shout, so it uses the
+ * soft tint; the scroller is a moving strip where the current pill has to be findable
+ * mid-scroll, so it uses the solid one.
  *
  * Which sections exist is decided on the server from the company's actual roles — a
  * pure buyer is never sent a "my listings" link, so there is nothing here to hide.
@@ -52,37 +59,24 @@ export function SidebarNav({
      * collapse to the column width and hands the overflow back to the strip.
      */
     <nav aria-label={label} className="min-w-0 lg:sticky lg:top-4 lg:self-start">
-      {/* Mobile: a scrollable tab strip that keeps every section one tap away. */}
-      <div className="no-scrollbar -mx-4 overflow-x-auto border-b border-border px-4 lg:hidden">
-        <ul className="flex min-w-max items-end gap-1">
-          {items.map((item) => {
-            const active = isActive(item)
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'relative inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap rounded-t-sm px-3 pb-2.5 pt-2 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                    "after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:content-['']",
-                    active
-                      ? 'font-semibold text-primary after:bg-primary'
-                      : 'font-medium text-muted-foreground after:bg-transparent hover:text-foreground',
-                  )}
-                >
-                  {item.label}
-                  {item.badge !== undefined && item.badge > 0 ? (
-                    <Badge active={active} value={item.badge} />
-                  ) : null}
-                </Link>
-              </li>
-            )
-          })}
+      {/* Mobile: a scrollable strip of pills that keeps every section one tap away. */}
+      <div className="no-scrollbar -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 lg:hidden">
+        <ul className="flex min-w-max items-center gap-2">
+          {items.map((item) => (
+            <li key={item.href}>
+              <RailPill
+                href={item.href}
+                label={item.label}
+                badge={item.badge}
+                active={isActive(item)}
+              />
+            </li>
+          ))}
         </ul>
       </div>
 
       {/* Desktop: a vertical rail. */}
-      <ul className="hidden gap-0.5 lg:flex lg:flex-col">
+      <ul className="hidden gap-1 lg:flex lg:flex-col">
         {items.map((item) => {
           const active = isActive(item)
           return (
@@ -99,7 +93,7 @@ export function SidebarNav({
               >
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 {item.badge !== undefined && item.badge > 0 ? (
-                  <Badge active={active} value={item.badge} />
+                  <RailBadge value={item.badge} />
                 ) : null}
               </Link>
             </li>
@@ -107,18 +101,5 @@ export function SidebarNav({
         })}
       </ul>
     </nav>
-  )
-}
-
-function Badge({ value, active }: { value: number; active: boolean }) {
-  return (
-    <span
-      className={cn(
-        'tnum inline-flex min-w-[20px] shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-caption font-medium leading-none',
-        active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
-      )}
-    >
-      {value > 99 ? '99+' : value}
-    </span>
   )
 }

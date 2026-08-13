@@ -39,69 +39,70 @@ export function PromoStrip({
   if (items.length === 0) return null
 
   return (
-    <section className="border-b border-border bg-card">
-      <div className="container py-5">
-        <div className="mb-3 flex items-center gap-2">
-          <Tag className="h-4 w-4 text-accent" aria-hidden />
-          <h2 className="text-base font-semibold">{t.home.promoTitle}</h2>
-        </div>
-
-        <ul className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
-          {items.map((item) => {
-            const photo = item.photos[0]
-            const unitLabel = t.units[item.unit as keyof typeof t.units] ?? item.unit
-
-            return (
-              <li
-                key={item.id}
-                className="w-[72vw] shrink-0 snap-start sm:w-[46vw] md:w-auto md:shrink"
-              >
-                <article className="group relative h-full overflow-hidden rounded-lg border border-border bg-background transition-colors hover:border-accent/50">
-                  <div className="relative aspect-[16/9] bg-muted">
-                    {photo ? (
-                      <Image
-                        src={photo.key}
-                        alt={photo.alt ?? item.title}
-                        fill
-                        sizes="(max-width: 768px) 72vw, 25vw"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="grid h-full place-items-center text-muted-foreground">
-                        <Package className="h-7 w-7" aria-hidden />
-                      </div>
-                    )}
-
-                    <span className="absolute left-2 top-2 rounded bg-accent px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent-foreground">
-                      {t.home.promoBadge}
-                    </span>
-                  </div>
-
-                  <div className="p-3">
-                    <h3 className="text-sm font-medium leading-snug">
-                      <Link
-                        href={localePath(locale, 'products', item.slug)}
-                        className="clamp-2 after:absolute after:inset-0 after:content-['']"
-                      >
-                        {item.title}
-                      </Link>
-                    </h3>
-                    <p className="tnum mt-1.5 text-base font-semibold">
-                      {formatMoney(item.priceBani, locale)}
-                      <span className="ml-1 text-caption font-normal text-muted-foreground">
-                        / {unitLabel}
-                      </span>
-                    </p>
-                    <p className="clamp-1 mt-0.5 text-caption text-muted-foreground">
-                      {item.company.displayName}
-                    </p>
-                  </div>
-                </article>
-              </li>
-            )
-          })}
-        </ul>
+    <section className="container pt-6">
+      <div className="mb-4 flex items-center gap-2.5">
+        <span className="icon-chip h-9 w-9 bg-accent-soft text-accent">
+          <Tag className="h-4 w-4" aria-hidden />
+        </span>
+        <h2 className="text-h3">{t.home.promoTitle}</h2>
       </div>
+
+      {/* `-my-2 py-2` gives the card shadows room inside the horizontal scroller. */}
+      <ul className="no-scrollbar -mx-4 -my-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-2 md:mx-0 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:px-0">
+        {items.map((item) => {
+          const photo = item.photos[0]
+          const unitLabel = t.units[item.unit as keyof typeof t.units] ?? item.unit
+
+          return (
+            <li
+              key={item.id}
+              className="w-[72vw] shrink-0 snap-start sm:w-[46vw] md:w-auto md:shrink"
+            >
+              <article className="surface-interactive group relative h-full overflow-hidden">
+                <div className="relative aspect-[16/9] bg-muted">
+                  {photo ? (
+                    <Image
+                      src={photo.key}
+                      alt={photo.alt ?? item.title}
+                      fill
+                      sizes="(max-width: 768px) 72vw, 25vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="grid h-full place-items-center text-muted-foreground">
+                      <Package className="h-7 w-7" aria-hidden />
+                    </div>
+                  )}
+
+                  <span className="absolute left-2.5 top-2.5 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold uppercase leading-none tracking-wide text-accent-foreground">
+                    {t.home.promoBadge}
+                  </span>
+                </div>
+
+                <div className="p-4">
+                  <h3 className="text-sm font-medium leading-snug">
+                    <Link
+                      href={localePath(locale, 'products', item.slug)}
+                      className="clamp-2 after:absolute after:inset-0 after:content-['']"
+                    >
+                      {item.title}
+                    </Link>
+                  </h3>
+                  <p className="tnum mt-2 text-lg font-semibold leading-none">
+                    {formatMoney(item.priceBani, locale)}
+                    <span className="ml-1 text-caption font-normal text-muted-foreground">
+                      / {unitLabel}
+                    </span>
+                  </p>
+                  <p className="clamp-1 mt-2 text-caption text-muted-foreground">
+                    {item.company.displayName}
+                  </p>
+                </div>
+              </article>
+            </li>
+          )
+        })}
+      </ul>
     </section>
   )
 }

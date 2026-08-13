@@ -120,7 +120,7 @@ export default async function SuppliersPage({
   }
 
   return (
-    <div className="container py-6 md:py-8">
+    <div className="container py-8 md:py-10">
       <header>
         <h1 className="text-h1">{t.nav.suppliers}</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">{t.seo.suppliersDescription}</p>
@@ -130,7 +130,7 @@ export default async function SuppliersPage({
         method="get"
         action={basePath}
         aria-label={t.filters.title}
-        className="mt-6 rounded-lg border border-border bg-card p-4"
+        className="surface mt-6 min-w-0 p-5"
       >
         {filters.category ? (
           <input type="hidden" name="category" value={filters.category} />
@@ -186,7 +186,7 @@ export default async function SuppliersPage({
 
       {companies.length === 0 ? (
         <EmptyState
-          className="mt-4 rounded-lg border border-border bg-card"
+          className="surface mt-4"
           icon={<Store aria-hidden />}
           title={t.catalog.emptyTitle}
           description={t.catalog.emptyText}
@@ -203,7 +203,7 @@ export default async function SuppliersPage({
         />
       ) : (
         <>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-3">
             {companies.map((company) => (
               <CompanyCard key={company.id} company={company} locale={locale} t={t} />
             ))}

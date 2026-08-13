@@ -42,7 +42,8 @@ export function Switch({
         >
           <span
             className={cn(
-              'absolute left-0.5 top-0.5 block h-[18px] w-[18px] rounded-full bg-card shadow-card transition-transform duration-150',
+              // shadow-sm, not shadow-card: the card elevation is far too wide for an 18px knob.
+              'absolute left-0.5 top-0.5 block h-[18px] w-[18px] rounded-full bg-card shadow-sm transition-transform duration-150',
               checked && 'translate-x-5',
             )}
           />

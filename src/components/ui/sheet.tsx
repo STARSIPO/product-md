@@ -137,7 +137,7 @@ export function Sheet({
           >
             <div
               className={cn(
-                'flex max-h-[92vh] w-full flex-col rounded-t-xl border border-border bg-card shadow-pop transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]',
+                'flex max-h-[92vh] w-full flex-col rounded-t-xl bg-card shadow-pop transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]',
                 isSide
                   ? 'sm:h-full sm:max-h-none sm:max-w-md sm:rounded-none sm:rounded-l-xl'
                   : 'sm:max-w-lg sm:rounded-b-xl',
@@ -149,7 +149,12 @@ export function Sheet({
                 className,
               )}
             >
-              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3.5 sm:px-5">
+              {/*
+                Unlike the dialog, the sheet body scrolls independently — these two
+                hairlines are load-bearing: they mark where the fixed chrome ends and
+                the scrolling content begins. They are kept for that reason alone.
+              */}
+              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-4 sm:px-5">
                 <h2 id={titleId} className="text-h3">
                   {title}
                 </h2>

@@ -212,7 +212,7 @@ export default async function SupplierPage({
   }
 
   return (
-    <div className="container py-6 md:py-8">
+    <div className="container py-8 md:py-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
@@ -227,15 +227,19 @@ export default async function SupplierPage({
         ]}
       />
 
-      {/* ---------------------------------------------------------------- head */}
-      <header className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
+      {/*
+        The identity block is one raised surface rather than four loose rows: logo,
+        name, rating, place and verification read as a single supplier card, which is
+        what a buyer is actually assessing before they write to a stranger.
+      */}
+      <header className="surface mt-4 flex flex-col gap-5 p-5 sm:flex-row sm:items-start md:p-6">
         <Avatar src={company.logoKey ?? undefined} name={company.displayName} size="xl" />
 
         <div className="min-w-0 flex-1">
           <h1 className="text-h1">{company.displayName}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{company.legalName}</p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
             {company.ratingCount > 0 ? (
               <Rating
                 value={company.ratingAvg}
@@ -258,23 +262,28 @@ export default async function SupplierPage({
             </span>
           </div>
 
-          <VerificationBadges className="mt-3" badges={company.badges} t={t} size="sm" />
+          <VerificationBadges className="mt-4" badges={company.badges} t={t} size="sm" />
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-2">
           <Link
             href={`${localePath(locale, 'messages')}?company=${company.id}`}
-            className={buttonVariants()}
+            className={buttonVariants({ size: 'lg' })}
           >
             {t.company.writeMessage}
           </Link>
         </div>
       </header>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
         {/* --------------------------------------------------------- tab panels */}
         <div className="min-w-0">
-          <nav aria-label={t.company.profileTitle} className="no-scrollbar overflow-x-auto border-b border-border">
+          {/* The one rule kept on this page: a tab strip's baseline is what the active
+              indicator is measured against. `min-w-0` stops it widening the column. */}
+          <nav
+            aria-label={t.company.profileTitle}
+            className="no-scrollbar min-w-0 overflow-x-auto border-b border-border"
+          >
             <ul className="flex min-w-max items-end gap-1">
               {TABS.map((item) => {
                 const selected = item === tab
@@ -310,7 +319,7 @@ export default async function SupplierPage({
           <div className="mt-5">
             {tab === 'products' ? (
               products.length > 0 ? (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3">
                   {products.map((product, index) => (
                     <ProductCard
                       key={product.id}
@@ -329,7 +338,7 @@ export default async function SupplierPage({
 
             {tab === 'requests' ? (
               requests.length > 0 ? (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2 md:gap-4">
                   {requests.map((request) => (
                     <RequestCard key={request.id} request={request} locale={locale} t={t} />
                   ))}
@@ -341,9 +350,9 @@ export default async function SupplierPage({
 
             {tab === 'reviews' ? (
               reviews.length > 0 ? (
-                <ul className="space-y-3">
+                <ul className="space-y-3 md:space-y-4">
                   {reviews.map((review) => (
-                    <li key={review.id} className="rounded-lg border border-border bg-card p-4">
+                    <li key={review.id} className="surface p-5">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-sm font-medium">
                           {review.authorCompany.displayName}
@@ -380,7 +389,7 @@ export default async function SupplierPage({
         </div>
 
         {/* ---------------------------------------------------------------- aside */}
-        <aside className="space-y-4">
+        <aside className="min-w-0 space-y-4">
           {company.description ? (
             <Panel title={t.company.about}>
               <p className="whitespace-pre-line text-sm text-muted-foreground">
@@ -559,8 +568,10 @@ export default async function SupplierPage({
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-4">
-      <h2 className="mb-3 text-sm font-semibold">{title}</h2>
+    // Sidebar panels stay a step below the tab content in the hierarchy: `text-base`
+    // semibold, not `text-h3`, or six stacked panels start competing with the <h1>.
+    <section className="surface min-w-0 p-5">
+      <h2 className="mb-4 text-base font-semibold">{title}</h2>
       {children}
     </section>
   )
@@ -568,9 +579,7 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
 
 function Placeholder({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-lg border border-dashed border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
-      {children}
-    </p>
+    <p className="surface-muted px-4 py-12 text-center text-sm text-muted-foreground">{children}</p>
   )
 }
 

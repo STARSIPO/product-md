@@ -155,7 +155,7 @@ export default async function RequestOffersPage({
     request.status === 'CANCELLED'
 
   return (
-    <div className="container py-8">
+    <div className="container py-10">
       <Breadcrumbs
         label={t.a11y.breadcrumb}
         items={[
@@ -175,7 +175,7 @@ export default async function RequestOffersPage({
       <div className="mt-6">
         {rows.length === 0 ? (
           <EmptyState
-            className="rounded-lg border border-border bg-card"
+            className="surface"
             icon={<Inbox aria-hidden />}
             title={t.offer.compareEmpty}
             description={t.offer.compareEmptyText}

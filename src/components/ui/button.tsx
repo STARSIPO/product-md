@@ -6,17 +6,26 @@ import { cn } from '@/lib/utils'
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link'
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon'
 
+/**
+ * `md` is 44px at every breakpoint so the default button already satisfies the touch
+ * target on a phone — no `md:min-h-[...]` escape hatch at the call site.
+ */
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'min-h-[36px] gap-1.5 px-3 text-sm',
-  md: 'min-h-[42px] gap-2 px-4 text-sm',
-  lg: 'min-h-[48px] gap-2 px-5 text-base',
-  icon: 'h-[42px] w-[42px] shrink-0 gap-0 p-0',
+  sm: 'min-h-[38px] gap-1.5 px-3.5 text-sm',
+  md: 'min-h-[44px] gap-2 px-4 text-sm',
+  lg: 'min-h-[50px] gap-2 px-5 text-base',
+  icon: 'h-11 w-11 shrink-0 gap-0 p-0',
 }
 
-/* Declared after SIZES so a variant may legitimately override the size padding (see `link`). */
+/*
+ * Declared after SIZES so a variant may legitimately override the size padding (see `link`).
+ * The 1px border is on every variant — transparent where the fill already defines the
+ * edge — so a row of mixed buttons stays pixel-aligned.
+ */
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: 'border-transparent bg-primary text-primary-foreground hover:bg-primary-hover',
   secondary: 'border-transparent bg-secondary text-secondary-foreground hover:bg-border',
+  // Only the two variants that sit on a white surface carry a visible edge.
   outline: 'border-input bg-card text-foreground hover:bg-muted',
   ghost: 'border-transparent bg-transparent text-foreground hover:bg-muted',
   destructive: 'border-transparent bg-destructive text-white hover:bg-destructive/90',

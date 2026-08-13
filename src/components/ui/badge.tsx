@@ -17,8 +17,8 @@ const VARIANTS: Record<BadgeVariant, string> = {
 }
 
 const SIZES: Record<BadgeSize, string> = {
-  sm: 'min-h-[20px] gap-1 px-1.5 text-caption',
-  md: 'min-h-[24px] gap-1.5 px-2.5 text-caption',
+  sm: 'min-h-[22px] gap-1 px-2 text-caption',
+  md: 'min-h-[26px] gap-1.5 px-3 text-caption',
 }
 
 export interface BadgeProps {
@@ -33,7 +33,8 @@ export function Badge({ variant = 'neutral', size = 'md', icon, children, classN
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-sm border font-medium leading-none',
+        // Pill shape: a badge is a chip, not a miniature card.
+        'inline-flex items-center rounded-full border font-medium leading-none',
         SIZES[size],
         VARIANTS[variant],
         className,

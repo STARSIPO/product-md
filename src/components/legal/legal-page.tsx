@@ -75,7 +75,7 @@ export function LegalPage({
         {hasToc ? (
           <nav
             aria-label={toc.label}
-            className="order-2 mb-8 rounded-lg border border-border bg-card p-4 lg:sticky lg:top-24 lg:mb-0 lg:bg-transparent lg:p-0 lg:pl-6"
+            className="surface order-2 mb-8 p-4 lg:sticky lg:top-24 lg:mb-0 lg:bg-transparent lg:p-0 lg:pl-6 lg:shadow-none"
           >
             <h2 className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
               {toc.label}
@@ -114,7 +114,7 @@ export function ProseSection({
   const Heading = headingLevel === 2 ? 'h2' : 'h3'
 
   return (
-    <section className="scroll-mt-24 border-t border-border pt-8 first:border-t-0 first:pt-0" id={id}>
+    <section className="scroll-mt-24" id={id}>
       <Heading className={headingLevel === 2 ? 'text-h3' : 'text-base font-semibold'}>
         {section.heading}
       </Heading>
@@ -256,14 +256,14 @@ export function LegalLinkCards({
   links: { label: string; description: string; href: string }[]
 }) {
   return (
-    <section className="mt-12 border-t border-border pt-8">
+    <section className="mt-12">
       <h2 className="text-h3">{heading}</h2>
-      <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+      <ul className="mt-5 grid gap-3 sm:grid-cols-2 md:gap-4">
         {links.map((link) => (
           <li key={link.href}>
             <Link
               href={link.href}
-              className="block h-full rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary hover:bg-primary-soft/30"
+              className="surface-interactive block h-full p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <span className="block text-sm font-medium">{link.label}</span>
               <span className="mt-1 block text-caption leading-relaxed text-muted-foreground">

@@ -67,7 +67,7 @@ export default async function HelpPage({ params }: { params: { locale: string } 
           <section key={group.title} id={toc[groupIndex]?.id} className="scroll-mt-24">
             <h2 className="text-h3">{group.title}</h2>
 
-            <div className="mt-4 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            <div className="surface mt-4 divide-y divide-border overflow-hidden">
               {group.items.map((item) => (
                 <details key={item.question} className="group">
                   <summary className="flex cursor-pointer list-none items-start gap-3 px-4 py-3.5 text-sm font-medium transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">

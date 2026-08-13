@@ -109,7 +109,7 @@ export default async function AdminSystemPage({ params }: { params: { locale: st
           </Alert>
         ) : null}
 
-        <dl className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+        <dl className="surface mt-3 divide-y divide-border">
           <div className="flex flex-wrap items-center gap-2 px-4 py-3">
             <dt className="text-sm text-muted-foreground">NODE_ENV</dt>
             <dd className="ml-auto font-mono text-sm">{env.NODE_ENV}</dd>
@@ -160,7 +160,7 @@ export default async function AdminSystemPage({ params }: { params: { locale: st
             <Alert variant="destructive" className="mt-3">
               {fmt(t.admin.balanceMismatch, { count: mismatches.length })}
             </Alert>
-            <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card">
+            <ul className="surface mt-3 divide-y divide-border">
               {mismatches.map((row) => (
                 <li key={row.companyId} className="flex flex-wrap items-center gap-3 px-4 py-3">
                   <span className="text-sm font-medium">{row.displayName}</span>

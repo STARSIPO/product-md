@@ -19,7 +19,8 @@ export function Breadcrumbs({ items, label, className }: BreadcrumbsProps) {
   if (items.length === 0) return null
 
   return (
-    <nav aria-label={label} className={cn('no-scrollbar overflow-x-auto', className)}>
+    /* min-w-0: the trail is often a grid child and must not widen the page at 320px. */
+    <nav aria-label={label} className={cn('no-scrollbar min-w-0 overflow-x-auto', className)}>
       <ol className="flex min-w-max items-center gap-1 text-caption text-muted-foreground">
         {items.map((item, index) => {
           const isLast = index === items.length - 1
