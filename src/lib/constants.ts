@@ -27,6 +27,30 @@ export type CompanyStatus = (typeof COMPANY_STATUSES)[number]
 export const ORG_TYPES = union(['SRL', 'SA', 'II', 'GT', 'PFA', 'NGO', 'OTHER'])
 export type OrgType = (typeof ORG_TYPES)[number]
 
+/**
+ * What the business IS, as opposed to which side of the market it plays.
+ *
+ * A supermarket chain buys wholesale and sells on, so `isBuyer`/`isSeller` cannot
+ * express it — those describe the marketplace role, this describes the company.
+ */
+export const COMPANY_KINDS = union([
+  'FARM',
+  'PRODUCER',
+  'WHOLESALER',
+  'RETAIL_CHAIN',
+  'HORECA',
+  'OTHER',
+])
+export type CompanyKind = (typeof COMPANY_KINDS)[number]
+
+/** Company kinds that may switch on the consumer-facing delivery storefront. */
+export const RETAIL_CAPABLE_KINDS: readonly CompanyKind[] = [
+  'RETAIL_CHAIN',
+  'PRODUCER',
+  'FARM',
+  'WHOLESALER',
+]
+
 export const COMPANY_MEMBER_ROLES = union(['OWNER', 'MANAGER'])
 export type CompanyMemberRole = (typeof COMPANY_MEMBER_ROLES)[number]
 
@@ -172,6 +196,35 @@ export const DEAL_TRANSITIONS: Record<DealStatus, readonly DealStatus[]> = {
   CANCELLED: [],
   DISPUTED: ['CONFIRMED', 'CANCELLED', 'COMPLETED'],
 }
+
+// --- retail delivery ---------------------------------------------------------
+
+export const RETAIL_ORDER_STATUSES = union([
+  'NEW',
+  'CONFIRMED',
+  'PREPARING',
+  'DELIVERING',
+  'DELIVERED',
+  'CANCELLED',
+])
+export type RetailOrderStatus = (typeof RETAIL_ORDER_STATUSES)[number]
+
+/**
+ * Allowed transitions for a consumer order. Simpler than a Deal: there is no
+ * two-sided confirmation, the seller drives the order forward and either side can
+ * cancel until it is out for delivery.
+ */
+export const RETAIL_ORDER_TRANSITIONS: Record<RetailOrderStatus, readonly RetailOrderStatus[]> = {
+  NEW: ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED: ['PREPARING', 'CANCELLED'],
+  PREPARING: ['DELIVERING', 'CANCELLED'],
+  DELIVERING: ['DELIVERED', 'CANCELLED'],
+  DELIVERED: [],
+  CANCELLED: [],
+}
+
+/** Discounts below this are not worth a badge — they read as noise, not a saving. */
+export const MIN_DISCOUNT_PERCENT = 3
 
 // --- messaging ---------------------------------------------------------------
 

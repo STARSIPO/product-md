@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import {
   AVAILABILITY,
+  COMPANY_KINDS,
   COMPLAINT_ENTITIES,
   COMPLAINT_REASONS,
   DOCUMENT_TYPES,
@@ -273,6 +274,15 @@ export const companySchema = z.object({
   languages: z.array(z.string().max(5)).max(5).optional(),
   paymentMethods: z.array(z.enum(PAYMENT_METHODS)).max(4).optional(),
   deliveryZones: z.array(z.string().max(40)).max(40).optional(),
+
+  kind: z.enum(COMPANY_KINDS).default('OTHER'),
+
+  // Consumer delivery is opt-in and has its own terms — a farm supplying restaurants
+  // should not find itself listed in a shopping storefront by accident.
+  isRetail: checkbox.optional(),
+  retailDeliveryFeeBani: optionalMoneySchema,
+  retailFreeFromBani: optionalMoneySchema,
+  retailDeliveryNote: optionalText(500),
 })
 
 // --- products ----------------------------------------------------------------
@@ -347,9 +357,59 @@ export const productSchema = z.object({
   videoUrl: optionalText(300),
   priceTiers: priceTiersSchema.optional(),
   attributes: z.array(productAttributeValueSchema).max(40).optional(),
+
+  // Retail availability. Wholesale sells 20 kg to a restaurant; the same listing may
+  // also sell 1 kg to a household, usually at a different price.
+  isRetail: checkbox.optional(),
+  retailPriceBani: optionalMoneySchema,
+  retailMinQty: optionalQuantitySchema,
 })
 
 export type ProductInput = z.infer<typeof productSchema>
+
+/**
+ * Setting or clearing a discount.
+ *
+ * `salePriceBani: null` ends the sale. The service restores the remembered original
+ * price, so the form never has to ask the seller what it used to be.
+ */
+export const productSaleSchema = z
+  .object({
+    productId: idSchema,
+    salePriceBani: optionalMoneySchema,
+    endsAt: futureDateSchema,
+  })
+  .refine((data) => data.salePriceBani === undefined || data.salePriceBani > 0, {
+    message: 'positive',
+    path: ['salePriceBani'],
+  })
+
+// --- retail delivery ---------------------------------------------------------
+
+export const cartLineSchema = z.object({
+  productId: idSchema,
+  quantity: quantitySchema,
+})
+
+export const retailOrderSchema = z.object({
+  sellerCompanyId: idSchema,
+  lines: z.array(cartLineSchema).min(1, REQUIRED).max(60),
+  customerName: text(120, 2),
+  customerPhone: phoneSchema,
+  customerEmail: emailSchema.optional().or(z.literal('').transform(() => undefined)),
+  deliveryAddress: text(250, 5),
+  deliveryLocalityId: optionalIdSchema,
+  deliveryNote: optionalText(500),
+  paymentMethod: z.enum(PAYMENT_METHODS).default('CASH'),
+})
+
+export type RetailOrderInput = z.infer<typeof retailOrderSchema>
+
+export const retailOrderStatusSchema = z.object({
+  orderId: idSchema,
+  status: z.enum(['NEW', 'CONFIRMED', 'PREPARING', 'DELIVERING', 'DELIVERED', 'CANCELLED']),
+  reason: optionalText(500),
+})
 
 // --- purchase requests -------------------------------------------------------
 

@@ -37,6 +37,12 @@ export const ROUTE_SEGMENTS = {
   category: { ru: 'category', ro: 'categorie' },
   suppliers: { ru: 'suppliers', ro: 'furnizori' },
   requests: { ru: 'requests', ro: 'cereri' },
+  // Discounted listings — «Акции». Distinct from the paid-visibility Promotion model.
+  sales: { ru: 'sales', ro: 'promotii' },
+  // Consumer-facing retail storefront — «Доставка продуктов».
+  delivery: { ru: 'delivery', ro: 'livrare' },
+  cart: { ru: 'cart', ro: 'cos' },
+  orders: { ru: 'orders', ro: 'comenzi' },
   search: { ru: 'search', ro: 'cautare' },
   favorites: { ru: 'favorites', ro: 'favorite' },
   messages: { ru: 'messages', ro: 'mesaje' },

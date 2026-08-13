@@ -77,6 +77,7 @@ model User {
   dealEvents        DealEvent[]
   documentHistory   DocumentHistory[]
   moderationTasks   ModerationTask[]
+  retailOrders      RetailOrder[]
 
   @@index([role, status])
   @@index([createdAt])
@@ -181,6 +182,23 @@ model Company {
   isBuyer  Boolean @default(false)
   isSeller Boolean @default(false)
 
+   /// What kind of business this is, independent of which side of the market it plays.
+   /// FARM | PRODUCER | WHOLESALER | RETAIL_CHAIN | HORECA | OTHER
+   ///
+   /// A supermarket chain is a RETAIL_CHAIN that is usually both: it buys wholesale and
+   /// sells on. `isBuyer`/`isSeller` still describe the marketplace side, `kind` describes
+   /// the company — conflating them would make "supermarket that only buys" unrepresentable.
+  kind String @default("OTHER")
+
+   /// Sells to end customers, not only to businesses. Gates the retail delivery
+   /// storefront: a farm supplying restaurants stays out of it until it opts in.
+  isRetail Boolean @default(false)
+
+  /// Consumer-facing delivery terms, kept apart from the wholesale ones above.
+  retailDeliveryFeeBani Int?
+  retailFreeFromBani    Int?
+  retailDeliveryNote    String?
+
   // denormalized aggregates, recomputed on write (see src/server/services/stats.ts)
   ratingAvg         Float @default(0)
   ratingCount       Int   @default(0)
@@ -214,6 +232,7 @@ model Company {
   ledger        LedgerEntry[]
   payments      Payment[]
   favoritedBy   Favorite[]
+  retailOrders  RetailOrder[]
   buyerConvos   Conversation[]            @relation("ConvoBuyer")
   sellerConvos  Conversation[]            @relation("ConvoSeller")
   participants  ConversationParticipant[]
@@ -348,6 +367,7 @@ model Locality {
   district District          @relation(fields: [districtId], references: [id], onDelete: Cascade)
   companies Company[]
   requests PurchaseRequest[]
+  retailOrders RetailOrder[]
 
   @@index([districtId])
   @@index([isMajor])
@@ -500,6 +520,22 @@ model Product {
   currency  String @default("MDL")
   unit      String @default("KG")
 
+   /// Sale price handling.
+   ///
+   /// `priceBani` is always the price a buyer pays. When a discount is running,
+   /// `oldPriceBani` holds the struck-through original — storing the previous price
+   /// rather than a percentage means the displayed saving can never drift from the
+   /// arithmetic, and the badge percentage is derived, not stored twice.
+  oldPriceBani   Int?
+  discountEndsAt DateTime?
+
+   /// Retail availability. A wholesale listing sells 20 kg minimum to a restaurant; the
+   /// same company may also want to sell 1 kg to a household through the delivery
+   /// storefront, often at a different price.
+  isRetail        Boolean @default(false)
+  retailPriceBani Int?
+  retailMinQty    Float   @default(1)
+
   minOrderQty  Float @default(1)
   availableQty Float?
 
@@ -566,11 +602,17 @@ model Product {
   promotions Promotion[]
   statsDaily ProductStatDaily[]
 
+  retailOrderItems RetailOrderItem[]
+
   @@index([status, publishedAt])
   @@index([categoryId, status])
   @@index([companyId, status])
   @@index([status, priceBani])
   @@index([bumpedAt])
+  // Serves the «Акции» rail: active listings whose sale has not expired.
+  @@index([status, discountEndsAt])
+  // Serves the retail storefront, which is a different audience to the catalogue.
+  @@index([status, isRetail])
 }
 
 model ProductPhoto {
@@ -1259,6 +1301,82 @@ model Setting {
   /// JSON-encoded value
   value     String
   updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Retail delivery
+// ---------------------------------------------------------------------------
+
+ /// A consumer order from the delivery storefront.
+ ///
+ /// Deliberately NOT a Deal. A Deal is a negotiated agreement between two companies with
+ /// two-sided confirmation, a single line and a printable contract; a retail order is one
+ /// shopper, several items, an address and a courier. Forcing them into one table would
+ /// mean every Deal query having to exclude retail rows forever.
+ ///
+ /// Like a Deal, Product.md is not a party to it and takes no payment — the shopper pays
+ /// the seller on delivery or by whatever method the seller offers.
+model RetailOrder {
+  id     String @id @default(cuid())
+  number String @unique
+
+  /// The shopper. May have no company at all — retail buyers are ordinary people.
+  customerUserId  String?
+  sellerCompanyId String
+
+  customerName  String
+  customerPhone String
+  customerEmail String?
+
+  deliveryAddress   String
+  deliveryLocalityId String?
+  deliveryNote      String?
+  deliveryAt        DateTime?
+
+  itemsTotalBani    Int
+  deliveryFeeBani   Int    @default(0)
+  totalBani         Int
+  currency          String @default("MDL")
+  paymentMethod     String @default("CASH")
+
+  // NEW | CONFIRMED | PREPARING | DELIVERING | DELIVERED | CANCELLED
+  status       String    @default("NEW")
+  cancelReason String?
+  confirmedAt  DateTime?
+  deliveredAt  DateTime?
+  cancelledAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer      User?     @relation(fields: [customerUserId], references: [id])
+  sellerCompany Company   @relation(fields: [sellerCompanyId], references: [id], onDelete: Cascade)
+  locality      Locality? @relation(fields: [deliveryLocalityId], references: [id])
+
+  items RetailOrderItem[]
+
+  @@index([sellerCompanyId, status, createdAt])
+  @@index([customerUserId, createdAt])
+  @@index([status, createdAt])
+}
+
+model RetailOrderItem {
+  id      String @id @default(cuid())
+  orderId String
+
+  productId String?
+  /// Snapshot: the order must still read correctly after the listing is edited or removed.
+  title         String
+  unitPriceBani Int
+  unit          String @default("PCS")
+  quantity      Float
+  totalBani     Int
+
+  order   RetailOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product?    @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 /// Feeds "recent searches" and "popular queries" on the search overlay.

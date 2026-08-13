@@ -103,3 +103,32 @@ export function tierDiscountPercent(basePriceBani: number, tierPriceBani: number
   if (basePriceBani <= 0 || tierPriceBani >= basePriceBani) return 0
   return Math.round(((basePriceBani - tierPriceBani) / basePriceBani) * 100)
 }
+
+export interface SaleLike {
+  priceBani: number
+  oldPriceBani: number | null
+  discountEndsAt: Date | null
+}
+
+/**
+ * Whether a listing is currently on sale.
+ *
+ * A sale needs a previous price that is genuinely higher and, if an end date was set,
+ * a date still in the future. Checking both here means no surface can accidentally
+ * show "−20%" on an expired promotion — the badge and the price come from one answer.
+ */
+export function isOnSale(product: SaleLike, now: Date = new Date()): boolean {
+  if (product.oldPriceBani === null) return false
+  if (product.oldPriceBani <= product.priceBani) return false
+  if (product.discountEndsAt !== null && product.discountEndsAt.getTime() <= now.getTime()) {
+    return false
+  }
+  return true
+}
+
+/** Rounded saving in percent, or 0 when there is no live sale. */
+export function salePercent(product: SaleLike, now: Date = new Date()): number {
+  if (!isOnSale(product, now)) return 0
+  const oldPrice = product.oldPriceBani as number
+  return Math.round(((oldPrice - product.priceBani) / oldPrice) * 100)
+}
