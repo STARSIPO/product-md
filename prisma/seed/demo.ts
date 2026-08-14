@@ -14,7 +14,12 @@
 import type { PrismaClient } from '@prisma/client'
 import { normalize, slugify } from '../../src/lib/normalize'
 import { hashPassword } from '../../src/server/auth/password'
-import { DEFAULT_FEATURE_FLAGS, DEFAULT_TARIFFS } from '../../src/lib/constants'
+import {
+  DEFAULT_FEATURE_FLAGS,
+  DEFAULT_TARIFFS,
+  type CompanyKind,
+  type RetailOrderStatus,
+} from '../../src/lib/constants'
 import { centreOf } from './geo'
 import { categorySearchParts, CATEGORY_BY_SLUG, optionId, resolveAttribute } from './categories'
 
@@ -205,8 +210,23 @@ const STARTER_BADGES: readonly BadgeSpec[] = [
   ['EMAIL', 'APPROVED'],
 ]
 
+/**
+ * Consumer-facing delivery terms. Present exactly when the company has switched the
+ * retail storefront on — `isRetail` is derived from it rather than typed twice, so a
+ * shop with a delivery fee and no storefront cannot exist in the demo data.
+ */
+interface RetailSpec {
+  /** What the shopper pays for delivery. 0 means the shop always delivers free. */
+  deliveryFeeBani: number
+  /** Order total from which delivery is free. */
+  freeFromBani: number
+  note: string
+}
+
 interface CompanySpec {
   key: string
+  /** FARM | PRODUCER | WHOLESALER | RETAIL_CHAIN | HORECA | OTHER */
+  kind: CompanyKind
   legalName: string
   displayName: string
   orgType: string
@@ -235,11 +255,14 @@ interface CompanySpec {
   avgResponseMinutes: number | null
   badges: readonly BadgeSpec[]
   photos: string[]
+  /** Omitted for everyone who sells only to businesses. */
+  retail?: RetailSpec
 }
 
 const COMPANIES: CompanySpec[] = [
   {
     key: 'agro-prim',
+    kind: 'FARM',
     legalName: 'Agro Prim SRL',
     displayName: 'Agro Prim',
     orgType: 'SRL',
@@ -268,6 +291,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'codru-fresh',
+    kind: 'FARM',
     legalName: 'Codru Fresh SRL',
     displayName: 'Codru Fresh',
     orgType: 'SRL',
@@ -296,6 +320,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'lactate-nistru',
+    kind: 'PRODUCER',
     legalName: 'Lactate Nistru SRL',
     displayName: 'Lactate Nistru',
     orgType: 'SRL',
@@ -321,9 +346,17 @@ const COMPANIES: CompanySpec[] = [
     avgResponseMinutes: 18,
     badges: FULL_BADGES,
     photos: [...PHOTO.milk, ...PHOTO.cheese],
+    // A producer selling straight to households alongside its wholesale business — the
+    // storefront is not only for chains, and the demo has to show that.
+    retail: {
+      deliveryFeeBani: 4_000,
+      freeFromBani: 25_000,
+      note: 'Развозим по Кишинёву и Криулянам по вторникам и пятницам до 12:00. Заказ принимаем накануне до 18:00.',
+    },
   },
   {
     key: 'carne-balti',
+    kind: 'PRODUCER',
     legalName: 'Carne Bălți SA',
     displayName: 'Carne Bălți',
     orgType: 'SA',
@@ -351,6 +384,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'legume-de-orhei',
+    kind: 'FARM',
     legalName: 'Legume de Orhei SRL',
     displayName: 'Legume de Orhei',
     orgType: 'SRL',
@@ -380,6 +414,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'pescuit-prut',
+    kind: 'WHOLESALER',
     legalName: 'Pescuit Prut SRL',
     displayName: 'Pescuit Prut',
     orgType: 'SRL',
@@ -407,6 +442,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'ambalaje-chisinau',
+    kind: 'PRODUCER',
     legalName: 'Ambalaje Chișinău SRL',
     displayName: 'Ambalaje Chișinău',
     orgType: 'SRL',
@@ -436,6 +472,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'brutaria-veche',
+    kind: 'PRODUCER',
     legalName: 'Brutăria Veche SRL',
     displayName: 'Brutăria Veche',
     orgType: 'SRL',
@@ -465,6 +502,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'miere-de-codru',
+    kind: 'FARM',
     legalName: 'Miere de Codru GȚ',
     displayName: 'Miere de Codru',
     orgType: 'GT',
@@ -492,6 +530,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'avicola-singerei',
+    kind: 'FARM',
     legalName: 'Avicola Sîngerei SA',
     displayName: 'Avicola Sîngerei',
     orgType: 'SA',
@@ -520,6 +559,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'moara-de-sus',
+    kind: 'PRODUCER',
     legalName: 'Moara de Sus SRL',
     displayName: 'Moara de Sus',
     orgType: 'SRL',
@@ -547,6 +587,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'struguri-de-sud',
+    kind: 'FARM',
     legalName: 'Struguri de Sud SRL',
     displayName: 'Struguri de Sud',
     orgType: 'SRL',
@@ -574,6 +615,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'oleo-sud',
+    kind: 'PRODUCER',
     legalName: 'Oleo Sud SRL',
     displayName: 'Oleo Sud',
     orgType: 'SRL',
@@ -601,6 +643,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'frigo-market',
+    kind: 'WHOLESALER',
     legalName: 'Frigo Market SRL',
     displayName: 'Frigo Market',
     orgType: 'SRL',
@@ -629,6 +672,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'conserve-nistrene',
+    kind: 'PRODUCER',
     legalName: 'Conserve Nistrene SRL',
     displayName: 'Conserve Nistrene',
     orgType: 'SRL',
@@ -657,6 +701,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'apa-izvor',
+    kind: 'PRODUCER',
     legalName: 'Apă Izvor SRL',
     displayName: 'Apă Izvor',
     orgType: 'SRL',
@@ -684,6 +729,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'horeca-service-md',
+    kind: 'WHOLESALER',
     legalName: 'HoReCa Service MD SRL',
     displayName: 'HoReCa Service MD',
     orgType: 'SRL',
@@ -713,6 +759,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'curat-prof',
+    kind: 'WHOLESALER',
     legalName: 'Curat Prof SRL',
     displayName: 'Curat Prof',
     orgType: 'SRL',
@@ -740,6 +787,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'transfrig-md',
+    kind: 'OTHER',
     legalName: 'TransFrig MD SRL',
     displayName: 'TransFrig MD',
     orgType: 'SRL',
@@ -768,6 +816,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'gustul-casei',
+    kind: 'PRODUCER',
     legalName: 'Gustul Casei SRL',
     displayName: 'Gustul Casei',
     orgType: 'SRL',
@@ -797,6 +846,7 @@ const COMPANIES: CompanySpec[] = [
   // --- buyers ----------------------------------------------------------------
   {
     key: 'la-plopi',
+    kind: 'HORECA',
     legalName: 'La Plopi SRL',
     displayName: 'Ресторан «La Plopi»',
     orgType: 'SRL',
@@ -825,6 +875,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'doi-prieteni',
+    kind: 'HORECA',
     legalName: 'Doi Prieteni SRL',
     displayName: 'Pizzeria «Doi Prieteni»',
     orgType: 'SRL',
@@ -852,6 +903,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'codrii-albi',
+    kind: 'HORECA',
     legalName: 'Codrii Albi SRL',
     displayName: 'Hotel «Codrii Albi»',
     orgType: 'SRL',
@@ -880,6 +932,7 @@ const COMPANIES: CompanySpec[] = [
   },
   {
     key: 'retail-plus-md',
+    kind: 'RETAIL_CHAIN',
     legalName: 'Retail Plus MD SRL',
     displayName: 'Retail Plus MD',
     orgType: 'SRL',
@@ -905,6 +958,80 @@ const COMPANIES: CompanySpec[] = [
     avgResponseMinutes: 55,
     badges: [...CORE_BADGES, ['DOCUMENTS', 'APPROVED'], ['BANK', 'APPROVED']],
     photos: [...PHOTO.market],
+  },
+  // --- supermarket chains that also deliver to households --------------------
+  // Both buy wholesale and sell on, which is what `kind` is for: `isBuyer`/`isSeller`
+  // say which side of the marketplace they play, RETAIL_CHAIN says what they are. Retail
+  // Plus MD above is the counter-example — the same kind, buying only, storefront off.
+  {
+    key: 'piata-verde',
+    kind: 'RETAIL_CHAIN',
+    legalName: 'Piața Verde Retail SRL',
+    displayName: 'Piața Verde',
+    orgType: 'SRL',
+    description:
+      'Сеть из 14 магазинов у дома в Кишинёве. Овощи и фрукты от молдавских хозяйств, молочное и мясное — от местных заводов. Доставляем на дом по городу в день заказа, если оформить до 16:00.',
+    districtId: 'chisinau',
+    localityId: 'chisinau-botanica',
+    address: 'ул. Дачия, 47',
+    contactPerson: 'Cristina Melnic',
+    owner: { name: 'Cristina Melnic', email: 'cristina.melnic@piataverde.md', phone: '+37369000123', locale: 'ru' },
+    website: 'https://piataverde.md',
+    isSeller: true,
+    isBuyer: true,
+    hours: 'ALWAYS',
+    paymentMethods: ['TRANSFER', 'CARD', 'CASH'],
+    languages: ['ru', 'ro'],
+    deliveryZones: ['chisinau', 'ialoveni', 'straseni'],
+    deliveryTerms: 'Приём поставок на распределительный центр в Кишинёве ежедневно с 06:00 до 14:00.',
+    minOrderBani: 0,
+    pickupAvailable: true,
+    deliveryPriceHint: '35 MDL по Кишинёву, бесплатно от 300 MDL',
+    balanceBani: 0,
+    dealsCompleted: 0,
+    avgResponseMinutes: 20,
+    badges: [...CORE_BADGES, ['DOCUMENTS', 'APPROVED'], ['ANSA', 'APPROVED']],
+    photos: [...PHOTO.market],
+    retail: {
+      deliveryFeeBani: 3_500,
+      freeFromBani: 30_000,
+      note: 'Доставляем по Кишинёву с 09:00 до 21:00. Заказы до 16:00 привозим в тот же день, позже — на следующий.',
+    },
+  },
+  {
+    key: 'familia-market',
+    kind: 'RETAIL_CHAIN',
+    legalName: 'Familia Market SRL',
+    displayName: 'Familia Market',
+    orgType: 'SRL',
+    description:
+      'Супермаркеты в Бельцах и на севере страны: девять точек и служба доставки. Работаем напрямую с фермерами и мельницами региона, поэтому базовая корзина стоит дешевле, чем в столице.',
+    districtId: 'balti',
+    localityId: 'balti-balti',
+    address: 'ул. Штефан чел Маре, 12',
+    contactPerson: 'Oleg Rotaru',
+    owner: { name: 'Oleg Rotaru', email: 'oleg.rotaru@familiamarket.md', phone: '+37369000124', locale: 'ro' },
+    website: 'https://familiamarket.md',
+    isSeller: true,
+    isBuyer: true,
+    hours: 'ALWAYS',
+    paymentMethods: ['TRANSFER', 'CARD', 'CASH'],
+    languages: ['ro', 'ru'],
+    deliveryZones: ['balti', 'singerei', 'falesti', 'riscani'],
+    deliveryTerms: 'Приём товара на складе в Бельцах пн–сб с 07:00 до 15:00.',
+    minOrderBani: 0,
+    pickupAvailable: true,
+    deliveryPriceHint: '25 MDL по Бельцам, бесплатно от 400 MDL',
+    balanceBani: 0,
+    dealsCompleted: 0,
+    avgResponseMinutes: 35,
+    badges: [...CORE_BADGES, ['DOCUMENTS', 'APPROVED']],
+    photos: [...PHOTO.market],
+    retail: {
+      deliveryFeeBani: 2_500,
+      freeFromBani: 40_000,
+      note: 'Доставка по Бельцам ежедневно с 10:00 до 20:00. В Сынжерей и Фэлешть — по четвергам.',
+    },
   },
 ]
 
@@ -935,6 +1062,20 @@ interface ProductSpec {
   title: string
   description: string
   priceBani: number
+  /**
+   * What the price WAS before the seller lowered it — never a percent, and always
+   * higher than `priceBani`. This is the whole mechanism behind «Акции»: a listing
+   * appears there because the number below went down, not because anybody paid.
+   */
+  oldPriceBani?: number
+  /** Days until the discount ends. Omitted = runs until the seller ends it. */
+  discountEndsIn?: number
+  /** Also sold to households through the delivery storefront. */
+  isRetail?: boolean
+  /** Household price. Omitted = the shopper pays `priceBani`. */
+  retailPriceBani?: number
+  /** Smallest quantity a household may order. Almost always 1. */
+  retailMinQty?: number
   unit: string
   minOrderQty: number
   availableQty: number | null
@@ -983,6 +1124,8 @@ const PRODUCTS: ProductSpec[] = [
     description:
       'Картофель столовый сорта Ред Скарлет из собственного хозяйства в Оргеевском районе. Калибр 45–60 мм, мытый и откалиброванный, без механических повреждений и позеленения. Хранится в климатической камере при +4 °C, поэтому клубень не прорастает до апреля. Отгружаем сеткой по 25 кг, ящиком или биг-бэгом по тонне.',
     priceBani: 800,
+    oldPriceBani: 950,
+    discountEndsIn: 3,
     unit: 'KG',
     minOrderQty: 500,
     availableQty: 180_000,
@@ -1092,6 +1235,7 @@ const PRODUCTS: ProductSpec[] = [
     description:
       'Капуста поздних сортов для длительного хранения и квашения. Кочан плотный, 2,5–4 кг, зачищен до двух кроющих листьев. Отгружается биг-бэгом по 500 кг или навалом в кузов.',
     priceBani: 700,
+    oldPriceBani: 820,
     unit: 'KG',
     minOrderQty: 1_000,
     availableQty: 140_000,
@@ -1231,6 +1375,8 @@ const PRODUCTS: ProductSpec[] = [
     description:
       'Яблоко Голден Делишес первого сорта, калибр 70–80 мм, фотокалибровка по цвету и размеру. Хранение в регулируемой атмосфере, поэтому плод остаётся плотным до мая. Ящик 13 кг с прокладкой, 60 ящиков на паллете.',
     priceBani: 1_500,
+    oldPriceBani: 1_750,
+    discountEndsIn: 5,
     unit: 'KG',
     minOrderQty: 500,
     availableQty: 320_000,
@@ -1401,6 +1547,9 @@ const PRODUCTS: ProductSpec[] = [
     description:
       'Пастеризованное коровье молоко жирностью 2,5 % из сырья собственных ферм Криулянского района. Пастеризация 76 °C, срок годности 7 суток. Плёночный пакет 1 л, короб 12 пакетов, паллета 720 л.',
     priceBani: 1_400,
+    isRetail: true,
+    retailPriceBani: 1_800,
+    retailMinQty: 1,
     unit: 'L',
     minOrderQty: 200,
     availableQty: 12_000,
@@ -1445,6 +1594,9 @@ const PRODUCTS: ProductSpec[] = [
     description:
       'Полутвёрдый сыр из пастеризованного коровьего молока, созревание 45 суток. Тесто эластичное, с мелким глазком, жирность в сухом веществе 45 %. Головка 4 кг в термоусадочном пакете, короб 3 головки.',
     priceBani: 8_900,
+    isRetail: true,
+    retailPriceBani: 10_400,
+    retailMinQty: 1,
     unit: 'KG',
     minOrderQty: 20,
     availableQty: 1_800,
@@ -1550,6 +1702,8 @@ const PRODUCTS: ProductSpec[] = [
     description:
       'Сладкосливочное масло традиционное, массовая доля жира 82,5 %, изготовлено методом сбивания. Без заменителей молочного жира — на срезе плотное, при жарке не пенится. Брикет 200 г в кашированной фольге, короб 30 брикетов.',
     priceBani: 17_500,
+    oldPriceBani: 19_800,
+    discountEndsIn: 2,
     unit: 'KG',
     minOrderQty: 20,
     availableQty: 640,
@@ -1663,6 +1817,7 @@ const PRODUCTS: ProductSpec[] = [
     description:
       'Замороженная говядина без кости, шоковая заморозка до -18 °C в течение 12 часов после обвалки. Блок 20 кг в полиэтиленовом вкладыше и гофрокоробе. Подходит для мясокомбинатов и производства полуфабрикатов.',
     priceBani: 8_200,
+    oldPriceBani: 9_400,
     unit: 'KG',
     minOrderQty: 200,
     availableQty: 6_000,
@@ -1855,6 +2010,8 @@ const PRODUCTS: ProductSpec[] = [
     description:
       'Филе грудки бройлера без кожи и кости, шоковая заморозка поштучно (IQF) — куски не смерзаются в блок. Короб 15 кг, срок хранения 12 месяцев при -18 °C. Для столовых, кейтеринга и производства полуфабрикатов.',
     priceBani: 4_900,
+    oldPriceBani: 5_600,
+    discountEndsIn: 6,
     unit: 'KG',
     minOrderQty: 150,
     availableQty: 14_000,
@@ -2053,6 +2210,8 @@ const PRODUCTS: ProductSpec[] = [
     description:
       'Мука пшеничная хлебопекарная высшего сорта: клейковина 26–28 %, белизна 54 условные единицы, зольность 0,55 %. Помол текущей недели, силосное хранение зерна. Мешок 50 кг, паллета 20 мешков.',
     priceBani: 900,
+    oldPriceBani: 1_020,
+    discountEndsIn: 9,
     unit: 'KG',
     minOrderQty: 1_000,
     availableQty: 420_000,
@@ -2293,6 +2452,8 @@ const PRODUCTS: ProductSpec[] = [
     description:
       'Мексиканская овощная смесь шоковой заморозки: кукуруза, зелёный горошек, морковь, стручковая фасоль и красный перец. Без предварительной варки, овощи не слипаются. Пакет 2,5 кг, короб 4 пакета.',
     priceBani: 3_900,
+    oldPriceBani: 4_500,
+    discountEndsIn: 1,
     unit: 'KG',
     minOrderQty: 100,
     availableQty: 22_000,
@@ -2626,6 +2787,307 @@ const PRODUCTS: ProductSpec[] = [
     photos: PHOTO.truck,
     views: 1_318,
     contacts: 118,
+  },
+  // --- Piața Verde and Familia Market -----------------------------------------
+  //
+  // Supermarket chains, so their whole range is retail: a household buys one loaf and
+  // one litre, while the wholesale minimum is what a small café orders. Without these
+  // the delivery storefront would list two shops with nothing in them.
+  {
+    seller: 'piata-verde',
+    category: 'bread',
+    title: 'Хлеб пшеничный формовой, 500 г',
+    description:
+      'Классический белый хлеб из муки высшего сорта, выпечка дважды в сутки в собственной пекарне сети. Пакет с клипсой, срок годности 72 часа.',
+    priceBani: 850,
+    isRetail: true,
+    retailPriceBani: 1_100,
+    retailMinQty: 1,
+    unit: 'PCS',
+    minOrderQty: 20,
+    availableQty: 900,
+    status: 'ACTIVE',
+    publishedAgo: 12,
+    originCountry: 'Молдова',
+    storageConditions: 'При температуре не выше 25 °C и влажности до 75 %.',
+    photos: [...PHOTO.bread],
+    views: 612,
+    contacts: 31,
+  },
+  {
+    seller: 'piata-verde',
+    category: 'milk',
+    title: 'Молоко ультрапастеризованное 3,2 %, 1 л',
+    description:
+      'Ультрапастеризованное молоко в тетрапаке, хранится до 6 месяцев без холодильника. Короб 12 штук.',
+    priceBani: 1_550,
+    oldPriceBani: 1_850,
+    discountEndsIn: 5,
+    isRetail: true,
+    retailPriceBani: 1_950,
+    retailMinQty: 1,
+    unit: 'L',
+    minOrderQty: 12,
+    availableQty: 4_800,
+    status: 'ACTIVE',
+    publishedAgo: 9,
+    originCountry: 'Молдова',
+    photos: [...PHOTO.milk],
+    views: 884,
+    contacts: 47,
+  },
+  {
+    seller: 'piata-verde',
+    category: 'chicken-eggs',
+    title: 'Яйца куриные С1, упаковка 10 шт',
+    description:
+      'Столовое яйцо первой категории в картонной упаковке по 10 штук. Поставка ежедневно, дата сортировки на каждом яйце.',
+    priceBani: 2_400,
+    isRetail: true,
+    retailPriceBani: 2_900,
+    retailMinQty: 1,
+    unit: 'PCS',
+    minOrderQty: 10,
+    availableQty: 2_000,
+    status: 'ACTIVE',
+    publishedAgo: 7,
+    originCountry: 'Молдова',
+    storageConditions: 'От 0 до +20 °C, срок хранения 25 суток.',
+    photos: [...PHOTO.eggs],
+    views: 735,
+    contacts: 39,
+  },
+  {
+    seller: 'piata-verde',
+    category: 'apples',
+    title: 'Яблоки Golden Delicious, калибр 70+',
+    description:
+      'Яблоки урожая текущего года из садов Криулянского района, калибр 70+, первый товарный сорт. Ящик 13 кг.',
+    priceBani: 1_600,
+    oldPriceBani: 1_950,
+    discountEndsIn: 3,
+    isRetail: true,
+    retailPriceBani: 2_100,
+    retailMinQty: 1,
+    unit: 'KG',
+    minOrderQty: 13,
+    availableQty: 6_500,
+    status: 'ACTIVE',
+    publishedAgo: 15,
+    originCountry: 'Молдова',
+    photos: [...PHOTO.apples],
+    views: 921,
+    contacts: 52,
+  },
+  {
+    seller: 'piata-verde',
+    category: 'water-still',
+    title: 'Вода питьевая негазированная, 5 л',
+    description:
+      'Артезианская питьевая вода первой категории в баклаге 5 литров с ручкой. Термоусадка по 2 штуки.',
+    priceBani: 1_150,
+    isRetail: true,
+    retailPriceBani: 1_450,
+    retailMinQty: 1,
+    unit: 'L',
+    minOrderQty: 10,
+    availableQty: 8_000,
+    status: 'ACTIVE',
+    publishedAgo: 20,
+    originCountry: 'Молдова',
+    photos: [...PHOTO.water],
+    views: 508,
+    contacts: 22,
+  },
+  {
+    seller: 'piata-verde',
+    category: 'cheese',
+    title: 'Сыр полутвёрдый «Молдавский», 45 %',
+    description:
+      'Полутвёрдый сыр из пастеризованного коровьего молока, выдержка 45 суток, жирность 45 % в сухом веществе. Головка около 3 кг.',
+    priceBani: 11_500,
+    isRetail: true,
+    retailPriceBani: 13_900,
+    retailMinQty: 1,
+    unit: 'KG',
+    minOrderQty: 3,
+    availableQty: 420,
+    status: 'ACTIVE',
+    publishedAgo: 11,
+    originCountry: 'Молдова',
+    storageConditions: 'От +2 до +6 °C.',
+    photos: [...PHOTO.cheese],
+    views: 673,
+    contacts: 35,
+  },
+  {
+    seller: 'piata-verde',
+    category: 'juices',
+    title: 'Сок яблочный прямого отжима, 1 л',
+    description:
+      'Осветлённый яблочный сок прямого отжима без сахара и консервантов. Стеклянная бутылка 1 л, короб 6 штук.',
+    priceBani: 2_300,
+    isRetail: true,
+    retailPriceBani: 2_900,
+    retailMinQty: 1,
+    unit: 'L',
+    minOrderQty: 6,
+    availableQty: 1_800,
+    status: 'ACTIVE',
+    publishedAgo: 6,
+    originCountry: 'Молдова',
+    photos: [...PHOTO.water],
+    views: 414,
+    contacts: 18,
+  },
+  {
+    seller: 'familia-market',
+    category: 'yogurt',
+    title: 'Йогурт натуральный без сахара, 400 г',
+    description:
+      'Натуральный термостатный йогурт без сахара и загустителей, жирность 3,2 %. Стакан 400 г, короб 8 штук.',
+    priceBani: 2_100,
+    isRetail: true,
+    retailPriceBani: 2_600,
+    retailMinQty: 1,
+    unit: 'KG',
+    minOrderQty: 8,
+    availableQty: 1_100,
+    status: 'ACTIVE',
+    publishedAgo: 5,
+    originCountry: 'Молдова',
+    storageConditions: 'От +2 до +6 °C, срок годности 14 суток.',
+    photos: [...PHOTO.milk],
+    views: 556,
+    contacts: 27,
+  },
+  {
+    seller: 'familia-market',
+    category: 'butter',
+    title: 'Масло сливочное 82,5 %, брикет 200 г',
+    description:
+      'Сливочное масло из пастеризованных сливок, жирность 82,5 %, без растительных жиров. Брикет в фольге, короб 20 штук.',
+    priceBani: 18_500,
+    oldPriceBani: 21_000,
+    discountEndsIn: 7,
+    isRetail: true,
+    retailPriceBani: 22_400,
+    retailMinQty: 1,
+    unit: 'KG',
+    minOrderQty: 4,
+    availableQty: 380,
+    status: 'ACTIVE',
+    publishedAgo: 8,
+    originCountry: 'Молдова',
+    storageConditions: 'От +2 до +6 °C.',
+    photos: [...PHOTO.butter],
+    views: 802,
+    contacts: 44,
+  },
+  {
+    seller: 'familia-market',
+    category: 'rice',
+    title: 'Рис круглозёрный шлифованный, 1 кг',
+    description:
+      'Круглозёрный шлифованный рис первого сорта в фасовке 1 кг. Подходит для каш и запеканок. Короб 10 пакетов.',
+    priceBani: 1_900,
+    isRetail: true,
+    retailPriceBani: 2_400,
+    retailMinQty: 1,
+    unit: 'KG',
+    minOrderQty: 10,
+    availableQty: 3_200,
+    status: 'ACTIVE',
+    publishedAgo: 18,
+    originCountry: 'Италия',
+    photos: [...PHOTO.grain],
+    views: 389,
+    contacts: 15,
+  },
+  {
+    seller: 'familia-market',
+    category: 'wheat-flour',
+    title: 'Мука пшеничная высшего сорта, 2 кг',
+    description:
+      'Мука пшеничная хлебопекарная высшего сорта в бумажном пакете 2 кг, клейковина 26 %. Короб 10 пакетов.',
+    priceBani: 1_250,
+    isRetail: true,
+    retailPriceBani: 1_600,
+    retailMinQty: 1,
+    unit: 'KG',
+    minOrderQty: 20,
+    availableQty: 5_400,
+    status: 'ACTIVE',
+    publishedAgo: 22,
+    originCountry: 'Молдова',
+    photos: [...PHOTO.flour],
+    views: 471,
+    contacts: 21,
+  },
+  {
+    seller: 'familia-market',
+    category: 'frozen-vegetables',
+    title: 'Смесь овощная замороженная, 400 г',
+    description:
+      'Замороженная овощная смесь: морковь, зелёный горошек, кукуруза, стручковая фасоль. Шоковая заморозка, пакет 400 г.',
+    priceBani: 2_800,
+    isRetail: true,
+    retailPriceBani: 3_500,
+    retailMinQty: 1,
+    unit: 'KG',
+    minOrderQty: 10,
+    availableQty: 900,
+    status: 'ACTIVE',
+    publishedAgo: 10,
+    originCountry: 'Молдова',
+    storageConditions: 'Не выше минус 18 °C, повторная заморозка не допускается.',
+    storageTempC: 'минус 18',
+    photos: [...PHOTO.carrots],
+    views: 343,
+    contacts: 13,
+  },
+  {
+    seller: 'familia-market',
+    category: 'pastry',
+    title: 'Плацинда с брынзой, 200 г',
+    description:
+      'Традиционная молдавская плацинда с солёной брынзой, выпекается ежедневно. Индивидуальная упаковка, короб 12 штук.',
+    priceBani: 1_450,
+    isRetail: true,
+    retailPriceBani: 1_900,
+    retailMinQty: 1,
+    unit: 'PCS',
+    minOrderQty: 12,
+    availableQty: 480,
+    status: 'ACTIVE',
+    publishedAgo: 4,
+    originCountry: 'Молдова',
+    allergens: 'Содержит глютен и молочный белок.',
+    photos: [...PHOTO.pastry],
+    views: 628,
+    contacts: 33,
+  },
+  {
+    seller: 'familia-market',
+    category: 'soft-drinks',
+    title: 'Лимонад «Тархун», 0,5 л',
+    description:
+      'Безалкогольный сильногазированный напиток на натуральном экстракте тархуна. Стеклянная бутылка 0,5 л, короб 20 штук.',
+    priceBani: 1_100,
+    oldPriceBani: 1_400,
+    discountEndsIn: 2,
+    isRetail: true,
+    retailPriceBani: 1_500,
+    retailMinQty: 1,
+    unit: 'L',
+    minOrderQty: 20,
+    availableQty: 2_600,
+    status: 'ACTIVE',
+    publishedAgo: 3,
+    originCountry: 'Молдова',
+    photos: [...PHOTO.water],
+    views: 467,
+    contacts: 19,
   },
 ]
 
@@ -4484,6 +4946,8 @@ export interface DemoSeedCounts {
   ledgerEntries: number
   featureFlags: number
   tariffs: number
+  retailOrders: number
+  retailOrderItems: number
 }
 
 /** Moldovan IDNO is 13 digits. These are syntactically valid and belong to nobody. */
@@ -4582,6 +5046,13 @@ export async function seedDemo(db: PrismaClient): Promise<DemoSeedCounts> {
         deliveryPriceHint: company.deliveryPriceHint,
         isBuyer: company.isBuyer,
         isSeller: company.isSeller,
+        kind: company.kind,
+        // Derived, never typed twice: delivery terms exist exactly when the storefront
+        // is on, so the demo cannot ship a shop with a fee nobody can ever pay.
+        isRetail: company.retail !== undefined,
+        retailDeliveryFeeBani: company.retail?.deliveryFeeBani ?? null,
+        retailFreeFromBani: company.retail?.freeFromBani ?? null,
+        retailDeliveryNote: company.retail?.note ?? null,
         ratingAvg: rating?.avg ?? 0,
         ratingCount: rating?.count ?? 0,
         dealsCompleted: DEALS_COMPLETED_BY_COMPANY.get(company.key) ?? 0,
@@ -4643,6 +5114,11 @@ export async function seedDemo(db: PrismaClient): Promise<DemoSeedCounts> {
       title: product.title,
       description: product.description,
       priceBani: product.priceBani,
+      oldPriceBani: product.oldPriceBani ?? null,
+      discountEndsAt: product.discountEndsIn === undefined ? null : ahead(product.discountEndsIn),
+      isRetail: product.isRetail ?? false,
+      retailPriceBani: product.retailPriceBani ?? null,
+      retailMinQty: product.retailMinQty ?? 1,
       currency: 'MDL',
       unit: product.unit,
       minOrderQty: product.minOrderQty,
@@ -5225,6 +5701,135 @@ export async function seedDemo(db: PrismaClient): Promise<DemoSeedCounts> {
   }))
   await db.tariff.createMany({ data: tariffRows })
 
+  // --- retail orders ----------------------------------------------------------
+  //
+  // Three consumer orders at different points in the flow, so the seller's «Заказы»
+  // screen and the admin list are not empty on a fresh database.
+  //
+  // The lines are built from products that were just written, rather than from hand
+  // written references, so this block cannot drift out of sync with the catalogue.
+  // Totals are summed from the lines exactly as placeRetailOrder does — a seeded order
+  // whose total disagreed with its own items would be a lie in the demo data.
+  const retailSourceProducts = await db.product.findMany({
+    where: { isRetail: true, status: 'ACTIVE' },
+    select: {
+      id: true,
+      title: true,
+      unit: true,
+      priceBani: true,
+      retailPriceBani: true,
+      companyId: true,
+    },
+    orderBy: { title: 'asc' },
+  })
+
+  const retailByCompany = new Map<string, typeof retailSourceProducts>()
+  for (const product of retailSourceProducts) {
+    const bucket = retailByCompany.get(product.companyId) ?? []
+    bucket.push(product)
+    retailByCompany.set(product.companyId, bucket)
+  }
+
+  const retailShops = [...retailByCompany.entries()].filter(([, items]) => items.length >= 2)
+
+  const RETAIL_ORDER_PLAN: readonly {
+    status: string
+    customerName: string
+    customerPhone: string
+    address: string
+    note?: string
+    quantities: readonly number[]
+    daysAgo: number
+    deliveryFeeBani: number
+  }[] = [
+    {
+      status: 'NEW',
+      customerName: 'Мария Цуркану',
+      customerPhone: '+37379451207',
+      address: 'Кишинёв, ул. Алба-Юлия 75, кв. 42, подъезд 3',
+      note: 'Домофон не работает, позвоните на телефон.',
+      quantities: [2, 1, 3],
+      daysAgo: 0,
+      deliveryFeeBani: 3_000,
+    },
+    {
+      status: 'PREPARING',
+      customerName: 'Andrei Cebotari',
+      customerPhone: '+37368112349',
+      address: 'Chișinău, str. Miorița 12, ap. 7',
+      quantities: [1, 4],
+      daysAgo: 1,
+      deliveryFeeBani: 0,
+    },
+    {
+      status: 'DELIVERED',
+      customerName: 'Елена Морару',
+      customerPhone: '+37360778142',
+      address: 'Кишинёв, бул. Дачия 41/2, кв. 118',
+      note: 'Оставить у консьержа.',
+      quantities: [3, 2],
+      daysAgo: 6,
+      deliveryFeeBani: 3_000,
+    },
+  ]
+
+  let retailOrderCount = 0
+  let retailOrderItemCount = 0
+
+  for (const [index, plan] of RETAIL_ORDER_PLAN.entries()) {
+    const shop = retailShops[index % Math.max(1, retailShops.length)]
+    if (!shop) continue
+
+    const [shopCompanyId, shopProducts] = shop
+    const lines = plan.quantities
+      .map((quantity, lineIndex) => {
+        const product = shopProducts[lineIndex % shopProducts.length]
+        if (!product) return null
+        const unitPriceBani = product.retailPriceBani ?? product.priceBani
+        return {
+          productId: product.id,
+          title: product.title,
+          unit: product.unit,
+          quantity,
+          unitPriceBani,
+          totalBani: Math.round(quantity * unitPriceBani),
+        }
+      })
+      .filter((line): line is NonNullable<typeof line> => line !== null)
+
+    if (lines.length === 0) continue
+
+    const itemsTotalBani = lines.reduce((sum, line) => sum + line.totalBani, 0)
+    const placedAt = ago(plan.daysAgo)
+
+    const order = await db.retailOrder.create({
+      data: {
+        number: `PMD-R-${placedAt.getFullYear()}-${String(index + 1).padStart(6, '0')}`,
+        sellerCompanyId: shopCompanyId,
+        customerName: plan.customerName,
+        customerPhone: plan.customerPhone,
+        deliveryAddress: plan.address,
+        deliveryNote: plan.note ?? null,
+        itemsTotalBani,
+        deliveryFeeBani: plan.deliveryFeeBani,
+        totalBani: itemsTotalBani + plan.deliveryFeeBani,
+        paymentMethod: 'CASH',
+        status: plan.status,
+        createdAt: placedAt,
+        confirmedAt: plan.status === 'NEW' ? null : placedAt,
+        deliveredAt: plan.status === 'DELIVERED' ? ago(Math.max(0, plan.daysAgo - 1)) : null,
+      },
+      select: { id: true },
+    })
+
+    await db.retailOrderItem.createMany({
+      data: lines.map((line) => ({ ...line, orderId: order.id })),
+    })
+
+    retailOrderCount += 1
+    retailOrderItemCount += lines.length
+  }
+
   return {
     users: userRows.length,
     companies: COMPANIES.length,
@@ -5253,6 +5858,8 @@ export async function seedDemo(db: PrismaClient): Promise<DemoSeedCounts> {
     ledgerEntries: ledgerRows.length,
     featureFlags: flagRows.length,
     tariffs: tariffRows.length,
+    retailOrders: retailOrderCount,
+    retailOrderItems: retailOrderItemCount,
   }
 }
 

@@ -18,7 +18,7 @@ import { env } from '@/env'
 import { getDictionary, fmt, resolveLocale, type Dictionary } from '@/lib/i18n'
 import { localePath, type Locale } from '@/lib/i18n/config'
 import { formatDate, formatDateShort } from '@/lib/i18n/format'
-import { formatMoney, formatQuantity } from '@/lib/money'
+import { formatMoney, formatQuantity, isOnSale, salePercent } from '@/lib/money'
 import { db } from '@/server/db'
 import { getCurrentUser } from '@/server/auth/session'
 import {
@@ -33,6 +33,7 @@ import { PriceTiersTable } from '@/components/product/price-tiers-table'
 import { ProductCard } from '@/components/product/product-card'
 import { FavoriteButton } from '@/components/product/favorite-button'
 import { VerificationBadges } from '@/components/company/verification-badges'
+import { OldPrice, SaleBadge, saleEndsLabel } from '@/components/sales/sale-price'
 import { Avatar, Badge, Breadcrumbs, Rating, buttonVariants } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
@@ -139,6 +140,13 @@ export default async function ProductPage({
   const placeName = place ? (locale === 'ro' ? place.nameRo : place.nameRu) : null
   const availabilityLabel =
     t.availability[product.availability as keyof typeof t.availability] ?? product.availability
+
+  // Asked once and reused by the price block, the badge and the sticky bar, so no two
+  // of them can disagree about whether the discount is still running.
+  const onSale = isOnSale(product)
+  const salePercentage = salePercent(product)
+  const oldPriceBani = product.oldPriceBani
+  const saleEnds = onSale ? saleEndsLabel(product.discountEndsAt, locale, t) : null
 
   const productUrl = `${env.APP_URL}${localePath(locale, 'products', product.slug)}`
   const supplierPath = localePath(locale, 'suppliers', product.company.slug)
@@ -505,10 +513,43 @@ export default async function ProductPage({
             */}
             {/* h2 on a phone: `formatMoney` returns a non-breaking string, so a large
                 amount at h1 would push the 320px column into horizontal scroll. */}
-            <p className="tnum rounded-md bg-primary-soft px-4 py-3.5 text-h2 leading-none text-primary sm:text-h1">
-              {formatMoney(product.priceBani, locale)}
-              <span className="ml-1.5 text-base font-normal">/ {unitLabel}</span>
-            </p>
+            {/* On sale the block switches to the accent tint: the price is no longer
+                just the price, it is the reason the buyer is looking. */}
+            <div
+              className={cn(
+                'rounded-md px-4 py-3.5',
+                onSale ? 'bg-accent-soft' : 'bg-primary-soft',
+              )}
+            >
+              <p
+                className={cn(
+                  'tnum text-h2 leading-none sm:text-h1',
+                  onSale ? 'text-accent' : 'text-primary',
+                )}
+              >
+                {formatMoney(product.priceBani, locale)}
+                <span className="ml-1.5 text-base font-normal">/ {unitLabel}</span>
+              </p>
+
+              {onSale && oldPriceBani !== null ? (
+                <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+                  <OldPrice bani={oldPriceBani} locale={locale} t={t} className="text-sm" />
+                  <SaleBadge percent={salePercentage} t={t} />
+                  <span className="tnum text-caption text-muted-foreground">
+                    {fmt(t.sales.saving, {
+                      amount: formatMoney(oldPriceBani - product.priceBani, locale),
+                    })}
+                  </span>
+                </div>
+              ) : null}
+
+              {saleEnds ? (
+                <p className="mt-2 flex items-center gap-1.5 text-caption text-muted-foreground">
+                  <CalendarClock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  {saleEnds}
+                </p>
+              ) : null}
+            </div>
 
             <dl className="mt-5 space-y-2.5 text-sm">
               <Fact
@@ -620,12 +661,27 @@ export default async function ProductPage({
         // Sits directly on top of the mobile bottom navigation (56px + the iOS inset).
         <div className="fixed inset-x-0 bottom-[calc(3.5rem_+_env(safe-area-inset-bottom,0px))] z-30 border-t border-border bg-card/95 px-4 py-2.5 backdrop-blur md:hidden">
           <div className="flex min-w-0 items-center gap-3">
-            <p className="tnum min-w-0 flex-1 text-base font-semibold leading-tight">
-              {formatMoney(product.priceBani, locale)}
-              <span className="ml-1 text-caption font-normal text-muted-foreground">
-                / {unitLabel}
-              </span>
-            </p>
+            <div className="min-w-0 flex-1">
+              <p
+                className={cn(
+                  'tnum text-base font-semibold leading-tight',
+                  onSale && 'text-accent',
+                )}
+              >
+                {formatMoney(product.priceBani, locale)}
+                <span className="ml-1 text-caption font-normal text-muted-foreground">
+                  / {unitLabel}
+                </span>
+              </p>
+              {onSale && oldPriceBani !== null ? (
+                <OldPrice
+                  bani={oldPriceBani}
+                  locale={locale}
+                  t={t}
+                  className="block text-caption"
+                />
+              ) : null}
+            </div>
             <Link href={contactHref} className={buttonVariants({ className: 'shrink-0' })}>
               <MessageSquare className="h-4 w-4" aria-hidden />
               {t.company.writeMessage}

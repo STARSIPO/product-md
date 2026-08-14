@@ -35,7 +35,8 @@ test.describe('navigation', () => {
 
     const nav = bottomNav(page)
     await expect(nav).toBeVisible()
-    await expect(nav.getByRole('link')).toHaveCount(5)
+    // Catalogue, delivery, post, sales, messages, profile.
+    await expect(nav.getByRole('link')).toHaveCount(6)
 
     // The layout reserves the bar's height with .pb-safe-nav; prove it by checking that
     // the last piece of content still sits above the bar after scrolling to the bottom.

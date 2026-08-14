@@ -107,6 +107,13 @@ export const ro: Dictionary = {
     closeMenu: 'Închide meniul',
     searchPlaceholder: 'De exemplu: 20 kg de carne de vită cu livrare în Chișinău',
     becomeSupplier: 'Deveniți furnizor',
+    sales: 'Promoții',
+    salesHint: 'Produse la care vânzătorii au redus prețul',
+    delivery: 'Livrare de produse',
+    deliveryShort: 'Livrare',
+    deliveryHint: 'Produse din magazine și de la ferme — livrate acasă',
+    cart: 'Coș',
+    myOrders: 'Comenzile mele',
   },
 
   footer: {
@@ -374,6 +381,53 @@ export const ro: Dictionary = {
     photosCount: 'Fotografii încărcate: {count}',
     expandSection: 'Extinde secțiunea',
     collapseSection: 'Restrânge secțiunea',
+
+    // --- domeniul de activitate -------------------------------------------
+    kind: 'Domeniul de activitate',
+    kindHint: 'De el depinde ce secțiuni ale platformei vă sunt disponibile.',
+    kinds: {
+      FARM: 'Fermă',
+      PRODUCER: 'Producător',
+      WHOLESALER: 'Furnizor angro',
+      RETAIL_CHAIN: 'Rețea de magazine',
+      HORECA: 'HoReCa',
+      OTHER: 'Altceva',
+    },
+    kindHints: {
+      FARM: 'Cultivă produse pe terenul propriu și vinde recolta.',
+      PRODUCER: 'Prelucrează materia primă și fabrică produse finite.',
+      WHOLESALER: 'Cumpără și livrează marfă altor companii.',
+      RETAIL_CHAIN: 'Magazine și supermarketuri care vând clienților finali.',
+      HORECA: 'Restaurant, cafenea, hotel sau cantină — cumpără pentru sine.',
+      OTHER: 'Niciuna dintre descrierile de mai sus nu se potrivește.',
+    },
+
+    // --- vânzare către clienți privați ------------------------------------
+    retailTitle: 'Vânzare către clienți privați',
+    retailHint:
+      'Produsele dumneavoastră vor apărea în secțiunea „Livrare de produse”, iar comenzile vor ajunge în cabinet.',
+    retailEnable: 'Vând clienților privați',
+    retailEnableHint: 'Puteți activa și dezactiva oricând.',
+    retailUnavailable:
+      'Pentru acest domeniu de activitate vânzarea cu amănuntul nu este disponibilă',
+    retailUnavailableHint:
+      'Vânzarea cu amănuntul o activează fermele, producătorii, furnizorii angro și rețelele de magazine.',
+    retailDeliveryFee: 'Costul livrării',
+    retailDeliveryFeeHint:
+      'Cât plătește cumpărătorul pentru livrarea comenzii. Gol — nu faceți livrare.',
+    retailFreeFrom: 'Livrare gratuită de la',
+    retailFreeFromHint:
+      'Suma comenzii de la care livrați gratuit. Gol — nu există livrare gratuită.',
+    retailNote: 'Condiții de livrare',
+    retailNotePlaceholder:
+      'Livrăm în Chișinău între 9:00 și 20:00. Comenzile până la 18:00 ajung în aceeași zi.',
+    retailNoteHint: 'Raioanele, orele de livrare și tot ce este bine să știe cumpărătorul.',
+    retailSaved: 'Setările de livrare au fost salvate',
+    retailPreviewFee: 'Livrare — {amount}',
+    retailPreviewFree: 'Livrare gratuită de la {amount}',
+    retailPreviewNone: 'Livrarea nu este configurată',
+    retailMoneyNote:
+      'Cumpărătorul vă plătește direct. Product.md nu încasează plăți și nu percepe comision.',
   },
 
   catalog: {
@@ -627,6 +681,244 @@ export const ro: Dictionary = {
     discardDraft: 'Începe din nou',
     stepInvalid: 'Verificați câmpurile marcate la acest pas.',
     progressLabel: 'Etapele completării',
+  },
+
+  sales: {
+    title: 'Promoții',
+    subtitle: 'Produse la care furnizorii au redus prețul',
+    badge: 'Promoție',
+    percentOff: '−{percent}%',
+    oldPrice: 'Anterior {price}',
+    newPrice: 'Acum {price}',
+    saving: 'Economisiți {amount}',
+    endsAt: 'Valabilă până la {date}',
+    endsToday: 'Reducerea se încheie astăzi',
+    endsTomorrow: 'Reducerea se încheie mâine',
+    endsInDays: 'Au mai rămas {count} zile',
+    noEndDate: 'Fără dată de încheiere',
+    count: 'Produse cu preț redus: {count}',
+    seeAll: 'Toate promoțiile',
+    fairnessNote:
+      'Locul în listă nu poate fi cumpărat: un produs ajunge aici doar pentru că vânzătorul a redus prețul.',
+
+    // --- filtre -----------------------------------------------------------
+    filterCategory: 'Categorie',
+    filterDistrict: 'Raion',
+    filterAll: 'Toate',
+    filterReset: 'Resetează filtrele',
+    filterEndingSoon: 'Se încheie curând',
+    filterBiggestFirst: 'Mai întâi reducerile mari',
+
+    // --- stări goale -------------------------------------------------------
+    emptyTitle: 'Momentan nu sunt promoții',
+    emptyText: 'Reveniți mai târziu — furnizorii reduc prețurile în mod regulat.',
+    emptyAction: 'Vezi catalogul',
+
+    // --- editorul vânzătorului ---------------------------------------------
+    manageTitle: 'Promoții',
+    manageSubtitle: 'Reduceți prețul unui produs — el va apărea în secțiunea „Promoții”.',
+    manageEmpty: 'Deocamdată nu există reduceri',
+    manageEmptyText:
+      'Alegeți un produs și indicați prețul nou. Cel vechi se păstrează, ca să vadă cumpărătorul diferența.',
+    editTitle: 'Reducere la produs',
+    selectProduct: 'Produs',
+    regularPrice: 'Prețul obișnuit',
+    currentPrice: 'Prețul curent',
+    salePrice: 'Prețul cu reducere',
+    salePriceHint: 'Trebuie să fie mai mic decât prețul obișnuit cu cel puțin {percent}%.',
+    endsAtField: 'Valabilă până la',
+    endsAtHint: 'Lăsați gol — reducerea va fi valabilă până când o anulați dumneavoastră.',
+    currentSaving: 'Cumpărătorul economisește',
+    savingValue: '{amount} ({percent}%)',
+    start: 'Pornește promoția',
+    update: 'Modifică reducerea',
+    clear: 'Anulează promoția',
+    clearConfirmTitle: 'Anulați promoția?',
+    clearConfirmText:
+      'Prețul va reveni la cel anterior — {price}. Produsul va dispărea din secțiunea „Promoții”.',
+    started: 'Promoția a fost pornită.',
+    updated: 'Reducerea a fost actualizată.',
+    cleared: 'Promoția a fost anulată, prețul anterior a fost restabilit.',
+    freeNote: 'O reducere nu costă nimic: pur și simplu puneți un preț mai mic decât cel anterior.',
+    statusActive: 'Activă',
+    statusEndsOn: 'Până la {date}',
+    statusExpired: 'Încheiată',
+
+    // --- erori -------------------------------------------------------------
+    errorNotLower: 'Prețul cu reducere trebuie să fie mai mic decât cel obișnuit.',
+    errorTooSmall: 'Reducerea este mai mică de {percent}% — cumpărătorii nu o vor observa.',
+    errorNoProduct: 'Alegeți un produs din catalogul dumneavoastră.',
+    errorPastDate: 'Data de încheiere trebuie să fie în viitor.',
+  },
+
+  retail: {
+    title: 'Livrare de produse',
+    subtitle: 'Produse din magazine, de la ferme și producători — livrate acasă',
+    intro: 'Alegeți magazinul, completați coșul și plasați comanda. Plata — direct vânzătorului.',
+
+    // --- magazine ----------------------------------------------------------
+    shopsTitle: 'Magazine și ferme',
+    shopsSubtitle: 'Fiecare vânzător are propriile condiții de livrare și comandă minimă.',
+    shopSingle: 'Magazin',
+    shopProducts: 'Produse în vânzare: {count}',
+    openShop: 'Deschide magazinul',
+    allShops: 'Toate magazinele',
+    backToShops: 'Înapoi la magazine',
+    shopsEmpty: 'Deocamdată niciun magazin nu a activat livrarea',
+    shopsEmptyText: 'Lucrăm ca magazinele să apară și în localitatea dumneavoastră.',
+
+    // --- vitrina -----------------------------------------------------------
+    searchPlaceholder: 'Pâine, lapte, legume…',
+    categoryAll: 'Toate categoriile',
+    productsTitle: 'Produse',
+    emptyTitle: 'Nu am găsit produse',
+    emptyText: 'Încercați altă căutare sau treceți la alt magazin.',
+    pricePerUnit: '{price} / {unit}',
+    minQty: 'Minimum {quantity}',
+    unavailable: 'Nu este în stoc',
+    addToCart: 'În coș',
+    inCart: 'În coș',
+    inCartQty: 'În coș: {quantity}',
+    increase: 'Adaugă încă unul',
+    decrease: 'Scoate unul',
+    removeItem: 'Elimină produsul',
+    quantity: 'Cantitate',
+
+    // --- coș ---------------------------------------------------------------
+    cart: 'Coș',
+    cartTitle: 'Comanda dumneavoastră',
+    cartFromShop: 'Comandă din magazinul „{shop}”',
+    cartEmpty: 'Coșul este gol',
+    cartEmptyText: 'Adăugați produse din orice magazin — vor apărea aici.',
+    cartEmptyAction: 'Vezi magazinele',
+    cartClear: 'Golește coșul',
+    cartClearConfirm: 'Scoateți toate produsele din coș?',
+    cartCount: 'Produse: {count}',
+    cartOtherShopTitle: 'În coș sunt produse din alt magazin',
+    cartOtherShopText:
+      'Comanda se plasează într-un singur magazin. Goliți coșul și începeți comanda în „{shop}”?',
+    cartOtherShopConfirm: 'Începe o comandă nouă',
+
+    // --- sume --------------------------------------------------------------
+    itemsTotal: 'Produse',
+    deliveryFee: 'Livrare',
+    deliveryFree: 'Gratuit',
+    deliveryNotSet: 'Se precizează de magazin',
+    freeFrom: 'Livrare gratuită de la {amount}',
+    freeFromLeft: 'Până la livrarea gratuită — {amount}',
+    total: 'Total',
+    totalHint: 'Suma finală este confirmată de magazin la preluarea comenzii.',
+
+    // --- plasarea comenzii -------------------------------------------------
+    checkout: 'Plasează comanda',
+    checkoutTitle: 'Plasarea comenzii',
+    checkoutSubtitle:
+      'Lăsați datele de contact și adresa — magazinul vă va contacta pentru confirmare.',
+    customerName: 'Nume și prenume',
+    customerNamePlaceholder: 'Ion Rusu',
+    customerPhone: 'Telefon',
+    customerPhonePlaceholder: '+373 60 000 000',
+    customerPhoneHint: 'La acest număr vă va contacta magazinul sau curierul.',
+    customerEmail: 'Email',
+    customerEmailHint: 'Opțional. Vă trimitem confirmarea comenzii.',
+    deliveryLocality: 'Localitate',
+    deliveryAddress: 'Adresa de livrare',
+    deliveryAddressPlaceholder: 'str. Ștefan cel Mare 100, ap. 25',
+    deliveryNote: 'Comentariu la comandă',
+    deliveryNotePlaceholder: 'Codul de la interfon, ora potrivită sau altceva.',
+    paymentMethod: 'Modalitatea de plată',
+    paymentHint: 'Plătiți direct magazinului la primire. Product.md nu încasează plăți.',
+    placeOrder: 'Confirmă comanda',
+    placing: 'Se plasează comanda…',
+    guestNotice:
+      'Comanda poate fi plasată fără înregistrare. Autentificați-vă pentru a vedea istoricul comenzilor.',
+
+    // --- confirmare --------------------------------------------------------
+    placedTitle: 'Comanda a fost primită',
+    placedText:
+      'Numărul comenzii — {number}. Magazinul vă va contacta pentru a confirma conținutul și ora livrării.',
+    placedOpenOrder: 'Deschide comanda',
+    placedContinue: 'Înapoi la cumpărături',
+
+    // --- comanda cumpărătorului --------------------------------------------
+    myOrders: 'Comenzile mele',
+    myOrder: 'Comanda mea',
+    orderNumber: 'Comanda nr. {number}',
+    orderPlacedAt: 'Plasată la {date}',
+    orderShop: 'Magazin',
+    orderItems: 'Conținutul comenzii',
+    orderCustomer: 'Cumpărător',
+    orderDeliveryTo: 'Livrare la adresa',
+    orderPayment: 'Plată',
+    orderComment: 'Comentariu',
+    orderTotal: 'Suma comenzii',
+    colProduct: 'Produs',
+    colQuantity: 'Cantitate',
+    colUnitPrice: 'Preț',
+    colSum: 'Sumă',
+    ordersEmpty: 'Deocamdată nu există comenzi',
+    ordersEmptyText: 'Comenzile plasate vor apărea aici.',
+    ordersEmptyAction: 'Vezi magazinele',
+
+    // --- statusuri ---------------------------------------------------------
+    status: 'Statutul comenzii',
+    statuses: {
+      NEW: 'Nouă',
+      CONFIRMED: 'Confirmată',
+      PREPARING: 'Se pregătește',
+      DELIVERING: 'În drum',
+      DELIVERED: 'Livrată',
+      CANCELLED: 'Anulată',
+    },
+    statusHints: {
+      NEW: 'Magazinul nu a confirmat încă comanda.',
+      CONFIRMED: 'Magazinul a preluat comanda.',
+      PREPARING: 'Comanda se pregătește.',
+      DELIVERING: 'Curierul aduce comanda la adresa dumneavoastră.',
+      DELIVERED: 'Comanda a fost livrată.',
+      CANCELLED: 'Comanda a fost anulată.',
+    },
+
+    // --- partea vânzătorului -----------------------------------------------
+    sellerOrders: 'Comenzi',
+    sellerOrdersTitle: 'Comenzile cumpărătorilor',
+    sellerOrdersSubtitle: 'Comenzi din secțiunea „Livrare de produse”.',
+    sellerOrdersEmpty: 'Deocamdată nu există comenzi',
+    sellerOrdersEmptyText: 'De îndată ce un cumpărător plasează o comandă, ea va apărea aici.',
+    filterStatus: 'Statut',
+    filterAll: 'Toate',
+    newOrders: 'Comenzi noi',
+    actionConfirm: 'Confirmă comanda',
+    actionPreparing: 'Începe pregătirea',
+    actionDelivering: 'Predă curierului',
+    actionDelivered: 'Marchează ca livrată',
+    actionCancel: 'Anulează comanda',
+    cancelTitle: 'Anulați comanda?',
+    cancelText: 'Cumpărătorul va vedea că a fost anulată și motivul, dacă îl indicați.',
+    cancelReason: 'Motivul anulării',
+    cancelReasonPlaceholder: 'De exemplu: produsul nu a mai rămas în stoc.',
+    cancelledReason: 'Motivul anulării: {reason}',
+    statusUpdated: 'Statutul comenzii a fost actualizat.',
+    contactCustomer: 'Sună cumpărătorul',
+    moneyNote:
+      'Decontarea cu cumpărătorul are loc direct. Product.md nu încasează plăți și nu percepe comision.',
+
+    // --- câmpurile de retail ale produsului --------------------------------
+    sellTitle: 'Vânzare cu amănuntul',
+    sellEnable: 'Vinde acest produs cu amănuntul',
+    sellHint: 'Produsul va apărea în secțiunea „Livrare de produse” pentru clienții privați.',
+    sellPrice: 'Preț cu amănuntul',
+    sellPriceHint: 'Lăsați gol — va fi afișat prețul obișnuit.',
+    sellMinQty: 'Cantitatea minimă',
+    sellMinQtyHint: 'Cât se poate comanda cel puțin. De obicei 1.',
+    sellDisabled: 'Mai întâi activați vânzarea către clienți privați în profilul companiei.',
+
+    // --- erori -------------------------------------------------------------
+    errorCartEmpty: 'Adăugați cel puțin un produs.',
+    errorItemUnavailable: 'Produsul „{title}” nu mai este în vânzare. Eliminați-l din coș.',
+    errorShopUnavailable: 'Magazinul nu preia comenzi în acest moment.',
+    errorMinQty: 'Comanda minimă pentru acest produs este {quantity}.',
+    errorCartFull: 'Coșul conține deja 60 de produse diferite. Eliminați ceva pentru a adăuga altul.',
   },
 
   request: {
@@ -1167,6 +1459,20 @@ export const ro: Dictionary = {
     attentionMessages: 'Mesaje necitite: {count}',
     mainActions: 'Acțiuni principale',
     openCatalog: 'Vezi catalogul',
+
+    // --- promoții și comenzi cu amănuntul ----------------------------------
+    sales: 'Promoții',
+    salesHint: 'Reduceri la produsele dumneavoastră',
+    retailOrders: 'Comenzi',
+    retailOrdersHint: 'Comenzi de la clienți privați',
+    newRetailOrders: 'Comenzi noi',
+    activeSales: 'Produse cu preț redus',
+    emptySales: 'Deocamdată nu există reduceri',
+    emptySalesText: 'Reduceți prețul oricărui produs — el va ajunge în secțiunea „Promoții”.',
+    emptyRetailOrders: 'Deocamdată nu există comenzi',
+    emptyRetailOrdersText: 'Aici vor apărea comenzile din secțiunea „Livrare de produse”.',
+    attentionRetailOrder: 'Comanda {number} așteaptă confirmarea',
+    attentionSaleEnding: 'Promoția la „{title}” se încheie la {date}',
   },
 
   analytics: {
@@ -1428,6 +1734,7 @@ export const ro: Dictionary = {
     emptyText: 'Modificați condițiile filtrului sau resetați-l.',
     totalRows: 'Total: {count}',
     filterAll: 'Toate',
+    retailOrderNumber: 'Numărul comenzii',
     reason: 'Motiv',
     role: 'Rol',
     roles: {
@@ -1900,6 +2207,8 @@ export const ro: Dictionary = {
     reviewSelf: 'Nu vă puteți evalua propria companie.',
     reviewExists: 'Recenzia la această tranzacție a fost deja lăsată.',
     conversationBlocked: 'Corespondența este limitată — mesajul nu a fost trimis.',
+    saleNotLower: 'Prețul promoțional trebuie să fie mai mic decât cel obișnuit.',
+    saleTooSmall: 'Reducerea este sub {percent}% — cumpărătorii nu o vor observa.',
   },
 
   validation: {
@@ -1956,6 +2265,13 @@ export const ro: Dictionary = {
     requestsDescription:
       'Cereri actuale de la restaurante, magazine și HoReCa. Propuneți-vă condițiile de livrare.',
     requestTitle: '{title} — cerere de achiziție',
+    salesTitle: 'Promoții și prețuri reduse la produse',
+    salesDescription:
+      'Produse la care furnizorii din Moldova au redus prețul: carne, legume, lactate și băcănie cu reducere.',
+    deliveryTitle: 'Livrare de produse acasă în Moldova',
+    deliveryDescription:
+      'Produse din magazine, de la ferme și producători locali, livrate acasă. Plata direct vânzătorului.',
+    shopTitle: '{company} — livrare de produse',
   },
 
   legal: {

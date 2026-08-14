@@ -10,7 +10,7 @@ import { RailBadge, RailPill } from '@/components/dashboard/section-rail'
  * Dashboard navigation.
  *
  * One list, two shapes: a vertical rail on desktop and a horizontally scrollable strip
- * of pills on a phone. A phone cannot show eleven sections at once, and collapsing them
+ * of pills on a phone. A phone cannot show a dozen sections at once, and collapsing them
  * behind a hamburger inside a page that is already behind a hamburger buries the whole
  * cabinet.
  *
@@ -52,8 +52,8 @@ export function SidebarNav({
   return (
     /**
      * `min-w-0` is load-bearing. This <nav> is a grid item, and a grid track sized `auto`
-     * takes its minimum from the item's min-content width — which, for a strip of eleven
-     * `min-w-max` tabs, is about 1060px. The inner `overflow-x-auto` never gets a chance
+     * takes its minimum from the item's min-content width — which, for a strip of a dozen
+     * `min-w-max` tabs, is well over 1000px. The inner `overflow-x-auto` never gets a chance
      * to scroll, because the track it lives in has already grown to fit, and the whole
      * page scrolls sideways instead. Overriding the automatic minimum lets the track
      * collapse to the column width and hands the overflow back to the strip.

@@ -18,12 +18,15 @@ import { ORG_TYPES } from '@/lib/constants'
 import { resolveErrorMessage, translate } from '@/app/[locale]/login/login-form'
 import { completeOnboarding } from '@/server/actions/company'
 import {
+  CompanyKindField,
   ContactFields,
   DeliveryFields,
   EMPTY_COMPANY_VALUES,
   GeographyFields,
+  RetailFields,
   Section,
   WorkingHoursEditor,
+  canSellRetail,
   toCompanyPayload,
   validateCompanyPayload,
   type CompanyFormValues,
@@ -54,6 +57,7 @@ type RoleChoice = 'buyer' | 'seller' | 'both'
 const FIELD_STEPS: Record<string, number> = {
   isBuyer: 0,
   isSeller: 0,
+  kind: 0,
   legalName: 1,
   displayName: 1,
   idno: 1,
@@ -71,6 +75,9 @@ const FIELD_STEPS: Record<string, number> = {
   paymentMethods: 2,
   languages: 2,
   deliveryZones: 2,
+  retailDeliveryFeeBani: 2,
+  retailFreeFromBani: 2,
+  retailDeliveryNote: 2,
 }
 
 function roleOf(values: CompanyFormValues): RoleChoice | '' {
@@ -343,6 +350,14 @@ export function OnboardingWizard({
               {errors['isBuyer']}
             </p>
           ) : null}
+
+          {/* Which side of the market you play, then what kind of business you are —
+              two different questions, and a supermarket answers "both" to the first. */}
+          <CompanyKindField
+            idPrefix="onboarding"
+            value={values.kind}
+            onChange={(kind) => update('kind', kind)}
+          />
         </Section>
       ) : null}
 
@@ -477,6 +492,20 @@ export function OnboardingWizard({
               update={update}
             />
           </Section>
+
+          {/* Offered during setup only to the kinds that can actually use it — a
+              supermarket signing up wants the storefront on today, not after a second
+              trip through the profile editor. */}
+          {canSellRetail(values.kind) ? (
+            <Section title={t.company.retailTitle} description={t.company.retailHint}>
+              <RetailFields
+                idPrefix="onboarding"
+                values={values}
+                errors={errors}
+                update={update}
+              />
+            </Section>
+          ) : null}
         </div>
       ) : null}
 

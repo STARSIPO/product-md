@@ -6,7 +6,12 @@ import { getDictionary, fmt, resolveLocale } from '@/lib/i18n'
 import { localePath } from '@/lib/i18n/config'
 import { formatDate, formatDateTime } from '@/lib/i18n/format'
 import { formatMoney } from '@/lib/money'
-import { COMPANY_STATUSES, VERIFICATION_TYPES } from '@/lib/constants'
+import {
+  COMPANY_KINDS,
+  COMPANY_STATUSES,
+  RETAIL_CAPABLE_KINDS,
+  VERIFICATION_TYPES,
+} from '@/lib/constants'
 import { requireAdmin } from '@/server/auth/guards'
 import { db } from '@/server/db'
 import { reconcileBalance } from '@/server/services/ledger'
@@ -17,6 +22,7 @@ import {
   TrialExtendButton,
   type BadgeRow,
 } from '@/components/admin/decision-dialog'
+import { CompanyKindSelect } from '../../_components/retail-controls'
 import { Alert, Badge, StatusBadge, buttonVariants } from '@/components/ui'
 
 /**
@@ -29,6 +35,9 @@ import { Alert, Badge, StatusBadge, buttonVariants } from '@/components/ui'
  *
  * All eight badge types are listed, granted or not. A screen that only showed the badges
  * a company already has would hide the one an operator came to award.
+ *
+ * The retail block is deliberately asymmetric with the rest of the page: `kind` is ours
+ * to correct, the storefront is the company's to switch on.
  */
 
 export const dynamic = 'force-dynamic'
@@ -69,6 +78,11 @@ export default async function AdminCompanyPage({
       trialEndsAt: true,
       isBuyer: true,
       isSeller: true,
+      kind: true,
+      isRetail: true,
+      retailDeliveryFeeBani: true,
+      retailFreeFromBani: true,
+      retailDeliveryNote: true,
       ratingAvg: true,
       ratingCount: true,
       dealsCompleted: true,
@@ -89,7 +103,7 @@ export default async function AdminCompanyPage({
 
   if (!company || company.deletedAt) notFound()
 
-  const [ledger, reconciliation, history] = await Promise.all([
+  const [ledger, reconciliation, history, retailOrders, retailProducts] = await Promise.all([
     db.ledgerEntry.findMany({
       where: { companyId: company.id },
       orderBy: { createdAt: 'desc' },
@@ -105,6 +119,8 @@ export default async function AdminCompanyPage({
     }),
     reconcileBalance(company.id),
     listAudit({ entityType: 'COMPANY', entityId: company.id, pageSize: 12 }),
+    db.retailOrder.count({ where: { sellerCompanyId: company.id } }),
+    db.product.count({ where: { companyId: company.id, isRetail: true, deletedAt: null } }),
   ])
 
   const companyStatuses = t.admin.companyStatuses as Record<string, string | undefined>
@@ -112,9 +128,16 @@ export default async function AdminCompanyPage({
   const ledgerTypes = t.balance.types as Record<string, string | undefined>
   const orgTypes = t.orgTypes as Record<string, string | undefined>
 
+  const companyKinds = t.company.kinds as Record<string, string | undefined>
+  const companyKindHints = t.company.kindHints as Record<string, string | undefined>
+
   const statusOptions = COMPANY_STATUSES.map((value) => ({
     value,
     label: companyStatuses[value] ?? value,
+  }))
+  const kindOptions = COMPANY_KINDS.map((value) => ({
+    value,
+    label: companyKinds[value] ?? value,
   }))
 
   const byType = new Map(company.badges.map((badge) => [badge.type, badge]))
@@ -193,6 +216,12 @@ export default async function AdminCompanyPage({
               {company._count.documents}
             </dd>
           </div>
+          <div className="flex flex-wrap items-baseline gap-2">
+            <dt className="text-caption text-muted-foreground">{t.company.kind}</dt>
+            <dd className="text-sm">
+              {companyKindHints[company.kind] ?? companyKinds[company.kind] ?? company.kind}
+            </dd>
+          </div>
         </dl>
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -201,12 +230,88 @@ export default async function AdminCompanyPage({
             status={company.status}
             statusOptions={statusOptions}
           />
+          <CompanyKindSelect
+            companyId={company.id}
+            kind={company.kind}
+            options={kindOptions}
+          />
           <Link
             href={localePath(locale, 'suppliers', company.slug)}
             className={buttonVariants({ variant: 'ghost', size: 'sm' })}
           >
             {t.common.open}
           </Link>
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------------- retail */}
+      {/* Read-only by design: whether a company sells to households is its own decision,
+          made in its profile. The panel needs to *see* it — a shopper complaint about a
+          delivery fee is unanswerable otherwise — but an operator silently switching a
+          storefront on would be a change nobody asked for. */}
+      <section>
+        <h2 className="text-h3">{t.company.retailTitle}</h2>
+
+        <div className="surface mt-3 p-4">
+          {company.isRetail ? (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="accent" size="sm">
+                  {t.nav.deliveryShort}
+                </Badge>
+                <span className="text-sm">
+                  {company.retailDeliveryFeeBani === null
+                    ? t.company.retailPreviewNone
+                    : company.retailDeliveryFeeBani === 0
+                      ? t.retail.deliveryFree
+                      : fmt(t.company.retailPreviewFee, {
+                          amount: formatMoney(company.retailDeliveryFeeBani, locale),
+                        })}
+                </span>
+                {company.retailFreeFromBani === null ? null : (
+                  <span className="text-sm text-muted-foreground">
+                    {fmt(t.company.retailPreviewFree, {
+                      amount: formatMoney(company.retailFreeFromBani, locale),
+                    })}
+                  </span>
+                )}
+              </div>
+
+              {company.retailDeliveryNote ? (
+                <p className="mt-2 text-sm text-muted-foreground">{company.retailDeliveryNote}</p>
+              ) : null}
+
+              <dl className="mt-4 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <dt className="text-caption text-muted-foreground">{t.retail.productsTitle}</dt>
+                  <dd className="tnum text-sm">{retailProducts}</dd>
+                </div>
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <dt className="text-caption text-muted-foreground">
+                    {t.dashboard.retailOrders}
+                  </dt>
+                  <dd className="tnum text-sm">{retailOrders}</dd>
+                </div>
+              </dl>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  href={`${localePath(locale, 'admin', 'orders')}?company=${encodeURIComponent(company.id)}`}
+                  className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+                >
+                  {t.dashboard.retailOrders}
+                </Link>
+              </div>
+
+              <p className="mt-3 text-caption text-muted-foreground">{t.company.retailMoneyNote}</p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {(RETAIL_CAPABLE_KINDS as readonly string[]).includes(company.kind)
+                ? t.company.retailHint
+                : t.company.retailUnavailableHint}
+            </p>
+          )}
         </div>
       </section>
 

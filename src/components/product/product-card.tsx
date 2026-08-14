@@ -1,12 +1,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { MapPin, Package, ShieldCheck, Truck } from 'lucide-react'
-import { formatMoney, formatQuantity } from '@/lib/money'
+import { formatMoney, formatQuantity, isOnSale, salePercent } from '@/lib/money'
 import { localePath, type Locale } from '@/lib/i18n/config'
 import type { Dictionary } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui'
 import { FavoriteButton } from '@/components/product/favorite-button'
+import { OldPrice, SaleBadge } from '@/components/sales/sale-price'
 
 /**
  * Catalogue card.
@@ -21,6 +22,13 @@ export interface ProductCardData {
   slug: string
   title: string
   priceBani: number
+  /**
+   * Set only on queries that select them (see SALE_CARD_SELECT). A card fed from a
+   * plain catalogue query simply has no sale to show, which is why these are optional
+   * rather than required-and-null everywhere.
+   */
+  oldPriceBani?: number | null
+  discountEndsAt?: Date | null
   unit: string
   minOrderQty: number
   availableQty: number | null
@@ -63,6 +71,16 @@ export function ProductCard({
     (badge) => badge.type === 'TRUSTED_SUPPLIER' || badge.type === 'DOCUMENTS',
   )
 
+  // One answer for the badge and the price: asking `isOnSale` twice with different
+  // clocks is how a card ends up advertising a discount it no longer applies.
+  const sale = {
+    priceBani: product.priceBani,
+    oldPriceBani: product.oldPriceBani ?? null,
+    discountEndsAt: product.discountEndsAt ?? null,
+  }
+  const onSale = isOnSale(sale)
+  const percent = salePercent(sale)
+
   return (
     <article
       className={cn(
@@ -90,11 +108,15 @@ export function ProductCard({
           </div>
         )}
 
-        {product.isUrgent ? (
-          <div className="absolute left-2 top-2">
-            <Badge variant="accent" size="sm">
-              {t.request.badgeUrgent}
-            </Badge>
+        {/* Stacked, so a discounted urgent listing shows both without either moving. */}
+        {onSale || product.isUrgent ? (
+          <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
+            {onSale ? <SaleBadge percent={percent} t={t} /> : null}
+            {product.isUrgent ? (
+              <Badge variant="accent" size="sm">
+                {t.request.badgeUrgent}
+              </Badge>
+            ) : null}
           </div>
         ) : null}
 
@@ -123,10 +145,25 @@ export function ProductCard({
         <div className="mt-3">
           {/* Price is the loudest thing on the card, and it grows once the grid gives
               the card enough width for the unit to stay on the same line. */}
-          <p className="tnum text-lg font-semibold leading-none md:text-h3 md:leading-none">
+          <p
+            className={cn(
+              'tnum text-lg font-semibold leading-none md:text-h3 md:leading-none',
+              // The reduced figure is the one being charged, so it takes the accent —
+              // the struck price under it is history, not an alternative.
+              onSale && 'text-accent',
+            )}
+          >
             {formatMoney(product.priceBani, locale)}
             <span className="ml-1 text-sm font-normal text-muted-foreground">/ {unitLabel}</span>
           </p>
+          {onSale && sale.oldPriceBani !== null ? (
+            <OldPrice
+              bani={sale.oldPriceBani}
+              locale={locale}
+              t={t}
+              className="mt-1.5 block text-caption"
+            />
+          ) : null}
           <p className="mt-2 text-caption text-muted-foreground">
             {t.product.minOrder}: {formatQuantity(product.minOrderQty, unitLabel, locale)}
           </p>

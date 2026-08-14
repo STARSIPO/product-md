@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Plus,
   ShieldCheck,
+  ShoppingBasket,
   User as UserIcon,
   X,
   Menu,
@@ -70,8 +71,14 @@ export function SiteHeader({
           <span className="hidden sm:inline">Product.md</span>
         </Link>
 
+        {/* Five entries is the ceiling for this row: the search field beside it is
+            `min-w-0 flex-1`, so anything wider eats the search rather than the page.
+            That is why delivery uses its short label here and its full one everywhere
+            the space is not contested. */}
         <nav className="hidden items-center gap-0.5 lg:flex" aria-label={t.nav.menu}>
           <HeaderLink href={href('products')}>{t.nav.catalog}</HeaderLink>
+          <HeaderLink href={href('sales')}>{t.nav.sales}</HeaderLink>
+          <HeaderLink href={href('delivery')}>{t.nav.deliveryShort}</HeaderLink>
           <HeaderLink href={href('requests')}>{t.nav.requests}</HeaderLink>
           <HeaderLink href={href('suppliers')}>{t.nav.suppliers}</HeaderLink>
         </nav>
@@ -149,6 +156,12 @@ export function SiteHeader({
                     <MenuLink href={href('dashboard')} onClick={() => setAccountOpen(false)}>
                       <UserIcon className="h-4 w-4" aria-hidden />
                       {t.nav.dashboard}
+                    </MenuLink>
+                    {/* Retail orders belong to the person, not to their company — a
+                        shopper with no company at all still has a history to open. */}
+                    <MenuLink href={href('orders')} onClick={() => setAccountOpen(false)}>
+                      <ShoppingBasket className="h-4 w-4" aria-hidden />
+                      {t.nav.myOrders}
                     </MenuLink>
                     {isStaff ? (
                       <MenuLink
@@ -241,14 +254,19 @@ export function SiteHeader({
             <MobileLink href={href('products')} onClick={() => setMenuOpen(false)}>
               {t.nav.catalog}
             </MobileLink>
+            <MobileLink href={href('sales')} onClick={() => setMenuOpen(false)}>
+              {t.nav.sales}
+            </MobileLink>
+            {/* The full label here — the menu is a column, so nothing is competing for
+                the width. */}
+            <MobileLink href={href('delivery')} onClick={() => setMenuOpen(false)}>
+              {t.nav.delivery}
+            </MobileLink>
             <MobileLink href={href('requests')} onClick={() => setMenuOpen(false)}>
               {t.nav.requests}
             </MobileLink>
             <MobileLink href={href('suppliers')} onClick={() => setMenuOpen(false)}>
               {t.nav.suppliers}
-            </MobileLink>
-            <MobileLink href={href('pricing')} onClick={() => setMenuOpen(false)}>
-              {t.footer.pricing}
             </MobileLink>
             {user ? (
               <MobileLink href={href('dashboard')} onClick={() => setMenuOpen(false)}>

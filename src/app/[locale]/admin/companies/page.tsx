@@ -6,7 +6,7 @@ import { localePath } from '@/lib/i18n/config'
 import { formatDateTime } from '@/lib/i18n/format'
 import { formatMoney } from '@/lib/money'
 import { buildQuery, parsePage } from '@/lib/utils'
-import { COMPANY_STATUSES } from '@/lib/constants'
+import { COMPANY_KINDS, COMPANY_STATUSES } from '@/lib/constants'
 import { requireAdmin } from '@/server/auth/guards'
 import { db } from '@/server/db'
 import {
@@ -16,6 +16,7 @@ import {
   type DataColumn,
 } from '@/components/admin/data-table'
 import { CompanyActions } from '@/components/admin/decision-dialog'
+import { CompanyKindSelect } from '../_components/retail-controls'
 import { Badge, Input, Pagination, Select, StatusBadge } from '@/components/ui'
 
 /**
@@ -25,6 +26,10 @@ import { Badge, Input, Pagination, Select, StatusBadge } from '@/components/ui'
  * dialog, which appends an ADJUSTMENT entry with a reason — `Company.balanceBani` is a
  * cache of the ledger and editing it directly would make the two disagree, which the
  * system page then reports as an inconsistency.
+ *
+ * `kind` is editable inline and `isRetail` is not. The kind is our classification of the
+ * business and an operator is the right person to fix it; whether a company sells to
+ * households is that company's own decision, so the panel reports it and leaves it alone.
  */
 
 export const dynamic = 'force-dynamic'
@@ -57,11 +62,18 @@ export default async function AdminCompaniesPage({
   const basePath = localePath(locale, 'admin', 'companies')
   const q = typeof searchParams.q === 'string' ? searchParams.q.trim() : undefined
   const status = typeof searchParams.status === 'string' ? searchParams.status : undefined
+  // Validated against the tuple rather than passed through: an unknown value would
+  // silently return an empty list and read as "no companies" instead of "bad filter".
+  const kindParam = typeof searchParams.kind === 'string' ? searchParams.kind : undefined
+  const kind = (COMPANY_KINDS as readonly string[]).includes(kindParam ?? '')
+    ? kindParam
+    : undefined
   const page = parsePage(typeof searchParams.page === 'string' ? searchParams.page : undefined)
 
   const where: Prisma.CompanyWhereInput = {
     deletedAt: null,
     ...(status ? { status } : {}),
+    ...(kind ? { kind } : {}),
     ...(q
       ? {
           OR: [
@@ -91,6 +103,8 @@ export default async function AdminCompaniesPage({
         balanceBani: true,
         isBuyer: true,
         isSeller: true,
+        kind: true,
+        isRetail: true,
         createdAt: true,
         badges: {
           where: { status: 'APPROVED' },
@@ -104,9 +118,14 @@ export default async function AdminCompaniesPage({
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const companyStatuses = t.admin.companyStatuses as Record<string, string | undefined>
   const badgeTypes = t.verification.types as Record<string, string | undefined>
+  const companyKinds = t.company.kinds as Record<string, string | undefined>
   const statusOptions = COMPANY_STATUSES.map((value) => ({
     value,
     label: companyStatuses[value] ?? value,
+  }))
+  const kindOptions = COMPANY_KINDS.map((value) => ({
+    value,
+    label: companyKinds[value] ?? value,
   }))
 
   type Row = (typeof rows)[number]
@@ -128,6 +147,20 @@ export default async function AdminCompaniesPage({
             {[row.legalName, row.idno].filter(Boolean).join(' · ')}
           </p>
         </div>
+      ),
+    },
+    {
+      key: 'kind',
+      header: t.company.kind,
+      cell: (row) => (
+        <span className="inline-flex flex-col items-start gap-1">
+          <CompanyKindSelect companyId={row.id} kind={row.kind} options={kindOptions} />
+          {row.isRetail ? (
+            <Badge variant="accent" size="sm">
+              {t.nav.deliveryShort}
+            </Badge>
+          ) : null}
+        </span>
       ),
     },
     {
@@ -219,6 +252,17 @@ export default async function AdminCompaniesPage({
             ))}
           </Select>
         </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium">{t.company.kind}</span>
+          <Select name="kind" defaultValue={kind ?? ''}>
+            <option value="">{t.admin.filterAll}</option>
+            {COMPANY_KINDS.map((value) => (
+              <option key={value} value={value}>
+                {companyKinds[value] ?? value}
+              </option>
+            ))}
+          </Select>
+        </label>
       </TableToolbar>
 
       <div>
@@ -232,6 +276,7 @@ export default async function AdminCompaniesPage({
               entity: 'companies',
               q,
               status,
+              kind,
             })}`}
             label={t.admin.exportCsv}
           />
@@ -250,7 +295,7 @@ export default async function AdminCompaniesPage({
           page={page}
           pageCount={pageCount}
           buildHref={(target) =>
-            `${basePath}${buildQuery({ q, status, page: target > 1 ? target : undefined })}`
+            `${basePath}${buildQuery({ q, status, kind, page: target > 1 ? target : undefined })}`
           }
           labels={{
             previous: t.a11y.previousPage,

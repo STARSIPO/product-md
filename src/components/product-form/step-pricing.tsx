@@ -1,6 +1,6 @@
 'use client'
 
-import { Field, Input, Select } from '@/components/ui'
+import { Field, Input, Select, Switch } from '@/components/ui'
 import { useI18n } from '@/lib/i18n/provider'
 import { AVAILABILITY, UNITS } from '@/lib/constants'
 import { formatMoney, parseAmountToBani } from '@/lib/money'
@@ -15,17 +15,23 @@ import type { StepProps } from './product-wizard'
  * a Romanian keyboard produces "95,50" and a number input silently discards it. The
  * comma form is accepted, echoed back formatted, and converted to integer bani by
  * `parseAmountToBani` — never by parseFloat.
+ *
+ * The retail block at the bottom is the same listing seen by a household: one kilo
+ * instead of twenty, at a price the seller sets separately or leaves to fall back on
+ * the wholesale one.
  */
 export function StepPricing({
   form,
   values,
   tierErrors,
-}: StepProps & { tierErrors: Record<string, string> }) {
-  const { t, locale } = useI18n()
+  companySellsRetail,
+}: StepProps & { tierErrors: Record<string, string>; companySellsRetail: boolean }) {
+  const { t, fmt, locale } = useI18n()
   const { errors } = form.formState
 
   const unitLabel = t.units[values.unit]
   const priceBani = parseAmountToBani(values.priceBani.trim())
+  const retailBani = parseAmountToBani(values.retailPriceBani.trim())
 
   return (
     <div className="space-y-5">
@@ -137,6 +143,86 @@ export function StepPricing({
         unitLabel={unitLabel}
         errors={tierErrors}
       />
+
+      {/* ------------------------------------------------------------- retail */}
+      <section aria-labelledby="product-retail-title" className="surface-muted rounded-md p-4">
+        <h3 id="product-retail-title" className="text-sm font-medium">
+          {t.retail.sellTitle}
+        </h3>
+
+        {companySellsRetail ? (
+          <>
+            <div className="mt-3">
+              <Switch
+                id="product-is-retail"
+                checked={values.isRetail}
+                onCheckedChange={(checked) =>
+                  form.setValue('isRetail', checked, { shouldDirty: true })
+                }
+                label={t.retail.sellEnable}
+              />
+              <p className="mt-1 text-caption text-muted-foreground">{t.retail.sellHint}</p>
+            </div>
+
+            {values.isRetail ? (
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Field
+                  label={t.retail.sellPrice}
+                  htmlFor="product-retail-price"
+                  hint={
+                    retailBani === null
+                      ? t.retail.sellPriceHint
+                      : `${formatMoney(retailBani, locale)} / ${unitLabel}`
+                  }
+                  error={translate(t, errors.retailPriceBani?.message)}
+                >
+                  <Input
+                    id="product-retail-price"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    placeholder={
+                      priceBani === null
+                        ? ''
+                        : formatMoney(priceBani, locale, {
+                            withCurrency: false,
+                          })
+                    }
+                    invalid={Boolean(errors.retailPriceBani)}
+                    {...form.register('retailPriceBani')}
+                  />
+                </Field>
+
+                <Field
+                  label={`${t.retail.sellMinQty}, ${unitLabel}`}
+                  htmlFor="product-retail-min-qty"
+                  hint={t.retail.sellMinQtyHint}
+                  error={translate(t, errors.retailMinQty?.message)}
+                >
+                  <Input
+                    id="product-retail-min-qty"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    placeholder="1"
+                    invalid={Boolean(errors.retailMinQty)}
+                    {...form.register('retailMinQty')}
+                  />
+                </Field>
+
+                {/* What one household actually pays — the number the wholesale price
+                    ladder above never shows. */}
+                <p className="tnum text-caption text-muted-foreground sm:col-span-2">
+                  {fmt(t.retail.pricePerUnit, {
+                    price: formatMoney(retailBani ?? priceBani ?? 0, locale),
+                    unit: unitLabel,
+                  })}
+                </p>
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <p className="mt-2 text-caption text-muted-foreground">{t.retail.sellDisabled}</p>
+        )}
+      </section>
     </div>
   )
 }

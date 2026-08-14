@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, LayoutGrid, MessageSquare, Plus, User } from 'lucide-react'
+import { LayoutGrid, MessageSquare, Percent, Plus, Truck, User } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
 import { cn } from '@/lib/utils'
 
@@ -23,10 +23,17 @@ export function MobileNav({
   const { t, href } = useI18n()
   const pathname = usePathname()
 
+  /**
+   * Six destinations, not seven: «Главная» is gone because the header logo is sticky and
+   * always one tap away, whereas the two new sections have no other entry point on a
+   * phone. Delivery uses its short label — at 320px a six-column bar leaves ~45px per
+   * cell, and «Доставка продуктов» would truncate to nonsense.
+   */
   const items = [
-    { key: 'home', label: t.nav.home, icon: Home, target: href() },
     { key: 'catalog', label: t.nav.catalog, icon: LayoutGrid, target: href('products') },
+    { key: 'delivery', label: t.nav.deliveryShort, icon: Truck, target: href('delivery') },
     { key: 'post', label: t.nav.post, icon: Plus, target: href('products', 'new'), primary: true },
+    { key: 'sales', label: t.nav.sales, icon: Percent, target: href('sales') },
     {
       key: 'messages',
       label: t.nav.messages,
@@ -47,7 +54,7 @@ export function MobileNav({
       aria-label={t.nav.menu}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <ul className="grid grid-cols-5">
+      <ul className="grid grid-cols-6">
         {items.map((item) => {
           const active = isActive(pathname, item.target)
           const Icon = item.icon
@@ -94,7 +101,8 @@ export function MobileNav({
 }
 
 function isActive(pathname: string, target: string): boolean {
-  // The locale root ("/ru") should only light up Home, not every route beneath it.
+  // A target that is only the locale root ("/ru") matches exactly, never every route
+  // beneath it — otherwise one item would be lit on every page of the site.
   const segments = target.split('/').filter(Boolean)
   if (segments.length <= 1) return pathname === target || pathname === `${target}/`
   return pathname === target || pathname.startsWith(`${target}/`)

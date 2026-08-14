@@ -72,6 +72,27 @@ async function sanitizeAttributes(
   return out
 }
 
+/**
+ * The retail half of a listing.
+ *
+ * A listing sold to households keeps its wholesale price untouched: `retailPriceBani`
+ * is a second price, and leaving it empty means "the same one" rather than "free" —
+ * which is why it is nullable and `retailPriceOf()` in services/retail.ts, not a
+ * default of 0, decides what a shopper pays.
+ *
+ * The minimum is a quantity, so it is a float (0.5 kg of cheese is a real order) and
+ * never falls below one unit of nothing: an omitted or zero minimum becomes 1.
+ */
+function retailColumns(input: ProductInput) {
+  const isRetail = input.isRetail ?? false
+
+  return {
+    isRetail,
+    retailPriceBani: isRetail ? (input.retailPriceBani ?? null) : null,
+    retailMinQty: isRetail && input.retailMinQty ? input.retailMinQty : 1,
+  }
+}
+
 export interface CreateProductOptions {
   publish: boolean
 }
@@ -125,6 +146,7 @@ export async function createProduct(
         pickupAvailable: input.pickupAvailable ?? false,
         deliveryRegions: input.deliveryRegions ? JSON.stringify(input.deliveryRegions) : null,
         videoUrl: input.videoUrl ?? null,
+        ...retailColumns(input),
         searchText,
         status,
         publishedAt: status === 'ACTIVE' ? new Date() : null,
@@ -225,6 +247,7 @@ export async function updateProduct(
         pickupAvailable: input.pickupAvailable ?? false,
         deliveryRegions: input.deliveryRegions ? JSON.stringify(input.deliveryRegions) : null,
         videoUrl: input.videoUrl ?? null,
+        ...retailColumns(input),
         searchText,
         status,
         moderatorComment: status === 'PENDING' ? null : undefined,

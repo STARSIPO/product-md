@@ -131,6 +131,11 @@ function buildPayload(
     attributes,
     photos: values.photos.slice(0, MAX_PRODUCT_PHOTOS).map((photo) => ({ key: photo.key })),
     documentIds: values.documentIds,
+    isRetail: values.isRetail,
+    // Empty means "the wholesale price also applies to a household", which the server
+    // stores as NULL rather than as a second copy of the same number.
+    retailPriceBani: optional(values.retailPriceBani),
+    retailMinQty: optional(values.retailMinQty),
   }
 }
 
@@ -149,6 +154,9 @@ function schemaForStep(step: number): z.ZodTypeAny | null {
         availableQty: true,
         availability: true,
         priceTiers: true,
+        isRetail: true,
+        retailPriceBani: true,
+        retailMinQty: true,
       })
     case 3:
       return productSchema.pick({
@@ -191,6 +199,9 @@ const FIELD_STEP: Record<string, number> = {
   availableQty: 2,
   availability: 2,
   priceTiers: 2,
+  isRetail: 2,
+  retailPriceBani: 2,
+  retailMinQty: 2,
   originCountry: 3,
   productionPlace: 3,
   manufacturer: 3,
@@ -221,6 +232,9 @@ const FORM_FIELDS: readonly string[] = [
   'availableQty',
   'availability',
   'priceTiers',
+  'isRetail',
+  'retailPriceBani',
+  'retailMinQty',
   'originCountry',
   'productionPlace',
   'manufacturer',
@@ -258,7 +272,13 @@ export interface ProductWizardProps {
   documents: DocumentOption[]
   /** REQUIRE_MODERATION — decides whether the primary action reads "publish" or "send". */
   requireModeration: boolean
-  company: { displayName: string; location: string | null }
+  /**
+   * `isRetail` is the company's own switch, read from the row rather than the session:
+   * the retail block on the pricing step is only useful once the shop itself is in the
+   * storefront, and a listing marked retail by a company that is not would simply never
+   * be shown.
+   */
+  company: { displayName: string; location: string | null; isRetail: boolean }
   initialCategory: PickedCategory | null
   initialValues: WizardValues
   initialAttributes: Record<string, AttributeValue>
@@ -632,7 +652,13 @@ export function ProductWizard({
             />
           ) : null}
 
-          {step === 2 ? <StepPricing {...stepProps} tierErrors={tierErrors} /> : null}
+          {step === 2 ? (
+            <StepPricing
+              {...stepProps}
+              tierErrors={tierErrors}
+              companySellsRetail={company.isRetail}
+            />
+          ) : null}
 
           {step === 3 ? (
             <StepAttributes

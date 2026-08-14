@@ -59,6 +59,10 @@ export interface WizardValues {
   videoUrl: string
   photos: PhotoDraft[]
   documentIds: string[]
+  /** Also sold to households through «Доставка продуктов», usually at another price. */
+  isRetail: boolean
+  retailPriceBani: string
+  retailMinQty: string
 }
 
 export function emptyWizardValues(): WizardValues {
@@ -91,5 +95,8 @@ export function emptyWizardValues(): WizardValues {
     videoUrl: '',
     photos: [],
     documentIds: [],
+    isRetail: false,
+    retailPriceBani: '',
+    retailMinQty: '',
   }
 }

@@ -38,6 +38,18 @@ function baniToInput(bani: number): string {
   return bani % 100 === 0 ? String(bani / 100) : (bani / 100).toFixed(2)
 }
 
+/**
+ * The same, for a nullable column where zero is a genuine answer.
+ *
+ * `minOrderBani` defaults to 0 and means "no minimum", so `baniToInput` blanks it. A
+ * retail delivery fee of 0 means "we deliver free" and must survive a round trip
+ * through the form, which is why it cannot share that function.
+ */
+function nullableBaniToInput(bani: number | null): string {
+  if (bani === null) return ''
+  return bani % 100 === 0 ? String(bani / 100) : (bani / 100).toFixed(2)
+}
+
 export default async function DashboardCompanyPage({
   params,
 }: {
@@ -94,6 +106,13 @@ export default async function DashboardCompanyPage({
     paymentMethods: decodeStringArray(company.paymentMethods),
     deliveryZones: decodeStringArray(company.deliveryZones),
     workingHours,
+    kind: company.kind,
+    isRetail: company.isRetail,
+    // NULL means "not set" and has to come back as an empty input, not as "0" — a shop
+    // that never named a delivery fee is not a shop that delivers for nothing.
+    retailDeliveryFee: nullableBaniToInput(company.retailDeliveryFeeBani),
+    retailFreeFrom: nullableBaniToInput(company.retailFreeFromBani),
+    retailNote: company.retailDeliveryNote ?? '',
   }
 
   return (

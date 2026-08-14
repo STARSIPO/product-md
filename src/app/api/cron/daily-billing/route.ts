@@ -3,6 +3,7 @@ import { env } from '@/env'
 import { safeEqual } from '@/server/crypto'
 import { runDailyBilling, sendExpiryWarnings } from '@/server/services/billing'
 import { expireRequests } from '@/server/services/requests'
+import { expireSales } from '@/server/services/sales'
 import { pruneExpiredSessions } from '@/server/auth/session'
 import { pruneExpiredTokens } from '@/server/auth/tokens'
 import { reportError } from '@/server/observability'
@@ -44,12 +45,17 @@ export async function POST(request: NextRequest) {
     // below reports on the state it leaves behind.
     const billing = await runDailyBilling(now)
 
-    const [documentWarnings, requestsExpired, sessionsPruned, tokensPruned] = await Promise.all([
-      sendExpiryWarnings(now),
-      expireRequests(),
-      pruneExpiredSessions(),
-      pruneExpiredTokens(),
-    ])
+    // A finished discount restores the seller's original price, so this has to run
+    // every night whether or not billing is switched on — a sale that outlives its own
+    // end date is a price the seller never agreed to keep charging.
+    const [documentWarnings, requestsExpired, salesExpired, sessionsPruned, tokensPruned] =
+      await Promise.all([
+        sendExpiryWarnings(now),
+        expireRequests(),
+        expireSales(now),
+        pruneExpiredSessions(),
+        pruneExpiredTokens(),
+      ])
 
     return NextResponse.json(
       {
@@ -59,6 +65,7 @@ export async function POST(request: NextRequest) {
         housekeeping: {
           documentWarnings,
           requestsExpired,
+          salesExpired,
           sessionsPruned,
           tokensPruned,
         },

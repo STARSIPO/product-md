@@ -47,6 +47,7 @@ export default async function NewProductPage({ params }: { params: { locale: str
       where: { id: user.companyId },
       select: {
         displayName: true,
+        isRetail: true,
         district: { select: { nameRu: true, nameRo: true } },
         locality: { select: { nameRu: true, nameRo: true } },
       },
@@ -85,6 +86,7 @@ export default async function NewProductPage({ params }: { params: { locale: str
       company={{
         displayName: company?.displayName ?? user.companyName ?? '',
         location: location === '' ? null : location,
+        isRetail: company?.isRetail ?? false,
       }}
       initialCategory={null}
       initialValues={emptyWizardValues()}

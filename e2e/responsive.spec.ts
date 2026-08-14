@@ -115,7 +115,7 @@ test.describe('responsive layout', () => {
 
     const links = bottomNav(page).getByRole('link')
     const count = await links.count()
-    expect(count).toBe(5)
+    expect(count).toBe(6)
 
     for (let index = 0; index < count; index += 1) {
       const box = await links.nth(index).boundingBox()

@@ -3,22 +3,43 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useRef, useState, useTransition, type ReactNode } from 'react'
-import { Building2, ExternalLink, ImagePlus, MapPin, Trash2 } from 'lucide-react'
+import {
+  Building2,
+  ExternalLink,
+  Factory,
+  ImagePlus,
+  MapPin,
+  Sprout,
+  Store,
+  Trash2,
+  Truck,
+  UtensilsCrossed,
+} from 'lucide-react'
 import {
   Alert,
   Button,
   CheckboxField,
   Field,
   Input,
+  RadioGroup,
   Select,
+  Switch,
   Textarea,
   useToast,
 } from '@/components/ui'
 import { CollapsibleSection } from '@/components/dashboard/collapsible-section'
 import { useI18n } from '@/lib/i18n/provider'
 import { LOCALES, LOCALE_LABELS } from '@/lib/i18n/config'
+import { formatMoney, parseAmountToBani } from '@/lib/money'
 import { companySchema } from '@/lib/validation'
-import { ORG_TYPES, PAYMENT_METHODS, MAX_IMAGE_BYTES } from '@/lib/constants'
+import {
+  COMPANY_KINDS,
+  ORG_TYPES,
+  PAYMENT_METHODS,
+  MAX_IMAGE_BYTES,
+  RETAIL_CAPABLE_KINDS,
+  type CompanyKind,
+} from '@/lib/constants'
 import { resolveErrorMessage, translate } from '@/app/[locale]/login/login-form'
 import {
   deleteCompanyPhoto,
@@ -99,6 +120,17 @@ export interface CompanyFormValues {
   paymentMethods: string[]
   deliveryZones: string[]
   workingHours: WorkingHoursDraft
+  /** What the business is — decides whether the consumer storefront is offered at all. */
+  kind: string
+  isRetail: boolean
+  retailDeliveryFee: string
+  retailFreeFrom: string
+  retailNote: string
+}
+
+/** Whether this kind of business may run the consumer storefront. */
+export function canSellRetail(kind: string): boolean {
+  return RETAIL_CAPABLE_KINDS.includes(kind as CompanyKind)
 }
 
 export const EMPTY_COMPANY_VALUES: CompanyFormValues = {
@@ -123,6 +155,11 @@ export const EMPTY_COMPANY_VALUES: CompanyFormValues = {
   paymentMethods: [],
   deliveryZones: [],
   workingHours: DEFAULT_WORKING_HOURS,
+  kind: 'OTHER',
+  isRetail: false,
+  retailDeliveryFee: '',
+  retailFreeFrom: '',
+  retailNote: '',
 }
 
 /** Form state in, schema input out — the server parses this exact object again. */
@@ -149,6 +186,13 @@ export function toCompanyPayload(values: CompanyFormValues): CompanyFormInput {
     paymentMethods: values.paymentMethods as CompanyFormInput['paymentMethods'],
     deliveryZones: values.deliveryZones,
     workingHours: values.workingHours,
+    kind: values.kind as CompanyFormInput['kind'],
+    // The server clears all four of these for a kind that cannot sell retail; sending
+    // them anyway keeps this function a plain projection of the form.
+    isRetail: values.isRetail,
+    retailDeliveryFeeBani: values.retailDeliveryFee,
+    retailFreeFromBani: values.retailFreeFrom,
+    retailDeliveryNote: values.retailNote,
   }
 }
 
@@ -179,6 +223,10 @@ const FIELD_SECTIONS: Record<string, string> = {
   description: 'basics',
   isBuyer: 'basics',
   isSeller: 'basics',
+  kind: 'basics',
+  retailDeliveryFeeBani: 'retail',
+  retailFreeFromBani: 'retail',
+  retailDeliveryNote: 'retail',
   phone: 'contacts',
   email: 'contacts',
   website: 'contacts',
@@ -439,6 +487,12 @@ export function CompanyForm({
           />
         </Field>
 
+        <CompanyKindField
+          idPrefix="company"
+          value={values.kind}
+          onChange={(kind) => update('kind', kind)}
+        />
+
         <fieldset className="min-w-0 border-0 p-0">
           <legend className="mb-2 text-sm font-medium">{t.company.rolesTitle}</legend>
           <div className="space-y-1">
@@ -505,6 +559,24 @@ export function CompanyForm({
           />
         </fieldset>
       </CollapsibleSection>
+
+      {/* ------------------------------------------------ retail storefront
+          Absent, not disabled, for a kind that cannot sell to households: a HoReCa
+          business has no use for delivery terms it is not allowed to publish, and a
+          greyed-out panel would only invite the question. */}
+      {canSellRetail(values.kind) ? (
+        <CollapsibleSection
+          title={t.company.retailTitle}
+          description={t.company.retailHint}
+          summary={values.isRetail ? t.company.retailEnable : t.common.no}
+          defaultOpen={values.isRetail}
+          forceOpen={invalidSections.has('retail')}
+          expandLabel={sectionLabels.expand}
+          collapseLabel={sectionLabels.collapse}
+        >
+          <RetailFields idPrefix="company" values={values} errors={errors} update={update} />
+        </CollapsibleSection>
+      ) : null}
 
       {/* ------------------------------------------------- payment & terms */}
       <CollapsibleSection
@@ -776,6 +848,177 @@ function CompanyPreview({
         </div>
       </div>
     </section>
+  )
+}
+
+// --- company kind ------------------------------------------------------------
+
+const KIND_ICONS: Record<CompanyKind, ReactNode> = {
+  FARM: <Sprout />,
+  PRODUCER: <Factory />,
+  WHOLESALER: <Truck />,
+  RETAIL_CHAIN: <Store />,
+  HORECA: <UtensilsCrossed />,
+  OTHER: <Building2 />,
+}
+
+/**
+ * What the business is, as six cards.
+ *
+ * Deliberately not a <select>: this choice decides whether the consumer storefront is
+ * offered at all, and a one-line hint under each option is what stops a farm from
+ * filing itself as a wholesaler because the word sounded bigger.
+ *
+ * `isBuyer`/`isSeller` next to it answer a different question — which side of the
+ * market you play. A supermarket is both, and neither field can express "supermarket".
+ */
+export function CompanyKindField({
+  idPrefix,
+  value,
+  onChange,
+}: {
+  idPrefix: string
+  value: string
+  onChange: (kind: string) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <fieldset className="min-w-0 border-0 p-0">
+      <legend className="mb-1 text-sm font-medium">{t.company.kind}</legend>
+      <p className="mb-2 text-caption text-muted-foreground">{t.company.kindHint}</p>
+
+      <RadioGroup
+        name={`${idPrefix}-kind`}
+        columns={2}
+        value={value}
+        onChange={onChange}
+        options={COMPANY_KINDS.map((kind) => ({
+          value: kind,
+          label: t.company.kinds[kind],
+          hint: t.company.kindHints[kind],
+          icon: KIND_ICONS[kind],
+        }))}
+      />
+
+      {/* Said once, here, rather than leaving the missing storefront panel unexplained. */}
+      {!canSellRetail(value) ? (
+        <p className="mt-2 text-caption text-muted-foreground">
+          {t.company.retailUnavailable}. {t.company.retailUnavailableHint}
+        </p>
+      ) : null}
+    </fieldset>
+  )
+}
+
+/**
+ * The consumer storefront's own terms.
+ *
+ * Everything below the switch is about one question the shopper asks before adding
+ * anything to a basket: what does delivery cost me. The line under the fields answers
+ * it back in the shopper's words, from the values currently typed — a fee stored in
+ * bani and a free-delivery threshold are otherwise two numbers whose interaction is
+ * only visible from the other side of the checkout.
+ */
+export function RetailFields({
+  idPrefix,
+  values,
+  errors,
+  update,
+}: {
+  idPrefix: string
+  values: CompanyFormValues
+  errors: Record<string, string>
+  update: <K extends keyof CompanyFormValues>(key: K, value: CompanyFormValues[K]) => void
+}) {
+  const { t, fmt, locale } = useI18n()
+
+  const feeBani = parseAmountToBani(values.retailDeliveryFee.trim())
+  const freeFromBani = parseAmountToBani(values.retailFreeFrom.trim())
+
+  const preview: string[] = []
+  if (feeBani !== null) {
+    preview.push(fmt(t.company.retailPreviewFee, { amount: formatMoney(feeBani, locale) }))
+  }
+  if (freeFromBani !== null) {
+    preview.push(fmt(t.company.retailPreviewFree, { amount: formatMoney(freeFromBani, locale) }))
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Switch
+          id={`${idPrefix}-is-retail`}
+          checked={values.isRetail}
+          onCheckedChange={(checked) => update('isRetail', checked)}
+          label={t.company.retailEnable}
+        />
+        <p className="mt-1 text-caption text-muted-foreground">{t.company.retailEnableHint}</p>
+      </div>
+
+      {values.isRetail ? (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label={t.company.retailDeliveryFee}
+              htmlFor={`${idPrefix}-retail-fee`}
+              hint={t.company.retailDeliveryFeeHint}
+              error={errors['retailDeliveryFeeBani']}
+            >
+              <Input
+                id={`${idPrefix}-retail-fee`}
+                inputMode="decimal"
+                autoComplete="off"
+                value={values.retailDeliveryFee}
+                onChange={(event) => update('retailDeliveryFee', event.target.value)}
+                placeholder="35"
+                invalid={Boolean(errors['retailDeliveryFeeBani'])}
+              />
+            </Field>
+
+            <Field
+              label={t.company.retailFreeFrom}
+              htmlFor={`${idPrefix}-retail-free-from`}
+              hint={t.company.retailFreeFromHint}
+              error={errors['retailFreeFromBani']}
+            >
+              <Input
+                id={`${idPrefix}-retail-free-from`}
+                inputMode="decimal"
+                autoComplete="off"
+                value={values.retailFreeFrom}
+                onChange={(event) => update('retailFreeFrom', event.target.value)}
+                placeholder="500"
+                invalid={Boolean(errors['retailFreeFromBani'])}
+              />
+            </Field>
+          </div>
+
+          <Field
+            label={t.company.retailNote}
+            htmlFor={`${idPrefix}-retail-note`}
+            hint={t.company.retailNoteHint}
+            error={errors['retailDeliveryNote']}
+          >
+            <Textarea
+              id={`${idPrefix}-retail-note`}
+              value={values.retailNote}
+              onChange={(event) => update('retailNote', event.target.value)}
+              placeholder={t.company.retailNotePlaceholder}
+              rows={3}
+              maxLength={500}
+            />
+          </Field>
+
+          {/* What the shopper will read on the shop card, from what is typed above. */}
+          <p className="surface-muted rounded-md px-3 py-2 text-sm">
+            {preview.length === 0 ? t.company.retailPreviewNone : preview.join(' · ')}
+          </p>
+        </>
+      ) : null}
+
+      <p className="text-caption text-muted-foreground">{t.company.retailMoneyNote}</p>
+    </div>
   )
 }
 

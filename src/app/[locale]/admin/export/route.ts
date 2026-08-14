@@ -38,6 +38,7 @@ const ENTITIES = [
   'products',
   'requests',
   'deals',
+  'retailOrders',
   'ledger',
   'payments',
   'audit',
@@ -153,9 +154,11 @@ async function buildSheet(entity: Entity, request: NextRequest): Promise<Sheet> 
     }
 
     case 'companies': {
+      const kind = param(request, 'kind')
       const where: Prisma.CompanyWhereInput = {
         deletedAt: null,
         ...(status ? { status } : {}),
+        ...(kind ? { kind } : {}),
         ...(q
           ? {
               OR: [
@@ -178,6 +181,8 @@ async function buildSheet(entity: Entity, request: NextRequest): Promise<Sheet> 
           idno: true,
           orgType: true,
           status: true,
+          kind: true,
+          isRetail: true,
           isBuyer: true,
           isSeller: true,
           balanceBani: true,
@@ -196,6 +201,8 @@ async function buildSheet(entity: Entity, request: NextRequest): Promise<Sheet> 
           'idno',
           'orgType',
           'status',
+          'kind',
+          'isRetail',
           'isBuyer',
           'isSeller',
           'balanceMDL',
@@ -211,6 +218,8 @@ async function buildSheet(entity: Entity, request: NextRequest): Promise<Sheet> 
           row.idno,
           row.orgType,
           row.status,
+          row.kind,
+          row.isRetail ? '1' : '0',
           row.isBuyer ? '1' : '0',
           row.isSeller ? '1' : '0',
           money(row.balanceBani),
@@ -239,6 +248,11 @@ async function buildSheet(entity: Entity, request: NextRequest): Promise<Sheet> 
           title: true,
           status: true,
           priceBani: true,
+          oldPriceBani: true,
+          discountEndsAt: true,
+          isRetail: true,
+          retailPriceBani: true,
+          retailMinQty: true,
           unit: true,
           viewsCount: true,
           contactsCount: true,
@@ -258,6 +272,11 @@ async function buildSheet(entity: Entity, request: NextRequest): Promise<Sheet> 
           'category',
           'status',
           'priceMDL',
+          'oldPriceMDL',
+          'discountEndsAt',
+          'isRetail',
+          'retailPriceMDL',
+          'retailMinQty',
           'unit',
           'views',
           'contacts',
@@ -272,6 +291,13 @@ async function buildSheet(entity: Entity, request: NextRequest): Promise<Sheet> 
           row.category.path,
           row.status,
           money(row.priceBani),
+          // Empty rather than 0.00 when there is no discount: a spreadsheet filter on
+          // "has a previous price" must not match every listing on the platform.
+          row.oldPriceBani === null ? '' : money(row.oldPriceBani),
+          iso(row.discountEndsAt),
+          row.isRetail ? '1' : '0',
+          row.retailPriceBani === null ? '' : money(row.retailPriceBani),
+          row.retailMinQty,
           row.unit,
           row.viewsCount,
           row.contactsCount,
@@ -385,6 +411,85 @@ async function buildSheet(entity: Entity, request: NextRequest): Promise<Sheet> 
           iso(row.createdAt),
           iso(row.completedAt),
           iso(row.cancelledAt),
+        ]),
+      }
+    }
+
+    case 'retailOrders': {
+      const company = param(request, 'company')
+      const where: Prisma.RetailOrderWhereInput = {
+        ...(status ? { status } : {}),
+        ...(company ? { sellerCompanyId: company } : {}),
+        ...(q
+          ? {
+              OR: [
+                { number: { contains: q } },
+                { customerName: { contains: q } },
+                { customerPhone: { contains: q } },
+              ],
+            }
+          : {}),
+      }
+
+      const rows = await db.retailOrder.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: MAX_ROWS,
+        select: {
+          id: true,
+          number: true,
+          status: true,
+          customerName: true,
+          customerPhone: true,
+          deliveryAddress: true,
+          itemsTotalBani: true,
+          deliveryFeeBani: true,
+          totalBani: true,
+          paymentMethod: true,
+          cancelReason: true,
+          createdAt: true,
+          deliveredAt: true,
+          sellerCompany: { select: { id: true, displayName: true } },
+          _count: { select: { items: true } },
+        },
+      })
+
+      return {
+        header: [
+          'id',
+          'number',
+          'shopId',
+          'shop',
+          'status',
+          'customer',
+          'phone',
+          'address',
+          'items',
+          'itemsTotalMDL',
+          'deliveryFeeMDL',
+          'totalMDL',
+          'paymentMethod',
+          'cancelReason',
+          'createdAt',
+          'deliveredAt',
+        ],
+        rows: rows.map((row) => [
+          row.id,
+          row.number,
+          row.sellerCompany.id,
+          row.sellerCompany.displayName,
+          row.status,
+          row.customerName,
+          row.customerPhone,
+          row.deliveryAddress,
+          row._count.items,
+          money(row.itemsTotalBani),
+          money(row.deliveryFeeBani),
+          money(row.totalBani),
+          row.paymentMethod,
+          row.cancelReason,
+          iso(row.createdAt),
+          iso(row.deliveredAt),
         ]),
       }
     }

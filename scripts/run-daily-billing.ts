@@ -22,16 +22,24 @@ async function main(): Promise<void> {
 
   // Imported lazily so a configuration error surfaces as a readable message from
   // src/env.ts rather than an opaque module-load stack.
-  const [{ runDailyBilling, sendExpiryWarnings }, { expireRequests }, { pruneExpiredTokens }] =
-    await Promise.all([
-      import('../src/server/services/billing'),
-      import('../src/server/services/requests'),
-      import('../src/server/auth/tokens'),
-    ])
+  const [
+    { runDailyBilling, sendExpiryWarnings },
+    { expireRequests },
+    { expireSales },
+    { pruneExpiredTokens },
+  ] = await Promise.all([
+    import('../src/server/services/billing'),
+    import('../src/server/services/requests'),
+    import('../src/server/services/sales'),
+    import('../src/server/auth/tokens'),
+  ])
 
   const report = await runDailyBilling()
   const expiringWarnings = await sendExpiryWarnings()
   const expiredRequests = await expireRequests()
+  // Restores the original price on every discount whose end date has passed. Runs
+  // regardless of BILLING_ENABLED — a discount is not a billable thing.
+  const expiredSales = await expireSales()
   const prunedTokens = await pruneExpiredTokens()
 
   // Session pruning is done directly: src/server/auth/session.ts imports next/headers,
@@ -61,6 +69,7 @@ async function main(): Promise<void> {
     `listings expired    ${report.listingsExpired}`,
     `offers expired      ${report.offersExpired}`,
     `requests expired    ${expiredRequests}`,
+    `sales expired       ${expiredSales}`,
     `low-balance warned  ${report.lowBalanceWarnings}`,
     `expiry warnings     ${expiringWarnings}`,
     `sessions pruned     ${prunedSessions}`,

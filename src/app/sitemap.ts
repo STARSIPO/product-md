@@ -35,6 +35,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { segments: ['products'], priority: 0.9, freq: 'daily' },
     { segments: ['requests'], priority: 0.9, freq: 'daily' },
     { segments: ['suppliers'], priority: 0.8, freq: 'daily' },
+    // Discounts change every day and are searched for by name — worth crawling often.
+    { segments: ['sales'], priority: 0.8, freq: 'daily' },
     { segments: ['pricing'], priority: 0.5, freq: 'monthly' },
     { segments: ['help'], priority: 0.4, freq: 'monthly' },
     { segments: ['contacts'], priority: 0.4, freq: 'monthly' },

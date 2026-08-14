@@ -6,10 +6,11 @@ import { db } from '@/server/db'
 import { getCategoryTree, getSubtreeIds } from '@/server/services/categories'
 import { getCurrentUser } from '@/server/auth/session'
 import { PRODUCT_CARD_SELECT, REQUEST_CARD_SELECT } from '@/server/services/search'
+import { getSaleHighlights } from '@/server/services/sales'
 import { ProductCard } from '@/components/product/product-card'
 import { RequestCard } from '@/components/request/request-card'
 import { CompanyCard } from '@/components/company/company-card'
-import { PromoStrip, type PromoItem } from '@/components/home/promo-strip'
+import { PromoStrip } from '@/components/home/promo-strip'
 import { CategoryRail, type CategoryRailItem } from '@/components/home/category-rail'
 import { CatalogSearch } from '@/components/search/catalog-search'
 import { buttonVariants } from '@/components/ui'
@@ -31,29 +32,11 @@ export default async function HomePage({ params }: { params: { locale: string } 
   const t = await getDictionary(locale)
   const user = await getCurrentUser()
 
-  const [roots, promoted, products, requests, suppliers, stats] = await Promise.all([
+  const [roots, discounted, products, requests, suppliers, stats] = await Promise.all([
     getCategoryTree(),
-    // Promotions are optional: this list is usually empty at launch, and the strip
-    // simply does not render in that case.
-    db.product.findMany({
-      where: {
-        status: 'ACTIVE',
-        deletedAt: null,
-        company: { status: 'ACTIVE' },
-        OR: [{ isHomepagePinned: true }, { promotedUntil: { gt: new Date() } }],
-      },
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        priceBani: true,
-        unit: true,
-        photos: { select: { key: true, alt: true }, orderBy: { sortOrder: 'asc' }, take: 1 },
-        company: { select: { displayName: true } },
-      },
-      orderBy: [{ promotedUntil: 'desc' }, { publishedAt: 'desc' }],
-      take: 4,
-    }),
+    // Discounts, not paid placement: the rail is fed by sellers lowering prices, and
+    // it is usually empty at launch — the strip simply does not render in that case.
+    getSaleHighlights(4),
     db.product.findMany({
       where: { status: 'ACTIVE', deletedAt: null, company: { status: 'ACTIVE' } },
       select: PRODUCT_CARD_SELECT,
@@ -174,8 +157,8 @@ export default async function HomePage({ params }: { params: { locale: string } 
         </div>
       </section>
 
-      {/* ----------------------------------- promotions (only when they exist) */}
-      <PromoStrip items={promoted as PromoItem[]} locale={locale} t={t} />
+      {/* ------------------------------------ discounts (only when they exist) */}
+      <PromoStrip items={discounted} locale={locale} t={t} />
 
       {/* -------------------------------------------- catalogue rail + listings */}
       <div className="container grid gap-6 py-8 lg:grid-cols-[248px_minmax(0,1fr)] lg:gap-8">

@@ -45,12 +45,16 @@ export default async function AdminLayout({
 
   await requireAdmin(locale)
 
-  const [queue, openComplaints, pendingDocuments, pendingPayments] = await Promise.all([
-    getQueueCounts(),
-    db.complaint.count({ where: { status: { in: ['OPEN', 'IN_REVIEW'] } } }),
-    db.document.count({ where: { status: 'PENDING' } }),
-    db.payment.count({ where: { status: 'PENDING' } }),
-  ])
+  const [queue, openComplaints, pendingDocuments, pendingPayments, newRetailOrders] =
+    await Promise.all([
+      getQueueCounts(),
+      db.complaint.count({ where: { status: { in: ['OPEN', 'IN_REVIEW'] } } }),
+      db.document.count({ where: { status: 'PENDING' } }),
+      db.payment.count({ where: { status: 'PENDING' } }),
+      // Not a moderation queue — nobody here has to act on a new order. The number is
+      // there so a shop that stopped confirming is visible from the sidebar.
+      db.retailOrder.count({ where: { status: 'NEW' } }),
+    ])
 
   const groups: AdminNavGroup[] = [
     {
@@ -78,6 +82,11 @@ export default async function AdminLayout({
         { href: localePath(locale, 'admin', 'products'), label: t.admin.products },
         { href: localePath(locale, 'admin', 'requests'), label: t.admin.requests },
         { href: localePath(locale, 'admin', 'deals'), label: t.admin.deals },
+        {
+          href: localePath(locale, 'admin', 'orders'),
+          label: t.retail.sellerOrdersTitle,
+          count: newRetailOrders,
+        },
         { href: localePath(locale, 'admin', 'reviews'), label: t.admin.reviews },
         {
           href: localePath(locale, 'admin', 'complaints'),

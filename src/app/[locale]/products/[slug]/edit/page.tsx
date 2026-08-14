@@ -166,6 +166,11 @@ export default async function EditProductPage({
       url: storage.publicUrl(photo.key),
     })),
     documentIds: attachedDocuments.map((row) => row.documentId),
+    isRetail: product.isRetail,
+    // NULL is "same as wholesale" and has to reopen as an empty field, not as a copy
+    // of the wholesale price the seller never chose.
+    retailPriceBani: baniToInput(product.retailPriceBani),
+    retailMinQty: String(product.retailMinQty),
   }
 
   const location = buildLocation(product.company, locale)
@@ -177,7 +182,11 @@ export default async function EditProductPage({
       districts={districts}
       documents={documents}
       requireModeration={requireModeration}
-      company={{ displayName: product.company.displayName, location }}
+      company={{
+        displayName: product.company.displayName,
+        location,
+        isRetail: product.company.isRetail,
+      }}
       initialCategory={initialCategory}
       initialValues={initialValues}
       initialAttributes={initialAttributes}

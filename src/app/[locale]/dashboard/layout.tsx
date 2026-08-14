@@ -45,13 +45,17 @@ export default async function DashboardLayout({
   const user = await requireUser(locale, localePath(locale, 'dashboard'))
   if (!user.companyId) redirect(localePath(locale, 'onboarding'))
 
-  const [counters, newOffers] = await Promise.all([
+  const [counters, newOffers, company, newRetailOrders] = await Promise.all([
     getHeaderCounters(user.id),
     user.isBuyer
       ? db.offer.count({
           where: { status: 'SENT', request: { companyId: user.companyId, deletedAt: null } },
         })
       : Promise.resolve(0),
+    // Retail is a property of the company, not of the session, so it is read here rather
+    // than carried in the cookie — switching the storefront off must take effect at once.
+    db.company.findUnique({ where: { id: user.companyId }, select: { isRetail: true } }),
+    db.retailOrder.count({ where: { sellerCompanyId: user.companyId, status: 'NEW' } }),
   ])
 
   const items: SidebarNavItem[] = [
@@ -59,9 +63,22 @@ export default async function DashboardLayout({
   ]
 
   if (user.isSeller) {
+    items.push(
+      {
+        href: localePath(locale, 'dashboard', 'products'),
+        label: t.dashboard.myProducts,
+      },
+      // Discounts belong to whoever has listings to discount — no retail required.
+      { href: localePath(locale, 'dashboard', 'sales'), label: t.dashboard.sales },
+    )
+  }
+
+  // Consumer orders only exist for a company that actually runs the storefront.
+  if (user.isSeller && company?.isRetail) {
     items.push({
-      href: localePath(locale, 'dashboard', 'products'),
-      label: t.dashboard.myProducts,
+      href: localePath(locale, 'dashboard', 'orders'),
+      label: t.dashboard.retailOrders,
+      badge: newRetailOrders,
     })
   }
 

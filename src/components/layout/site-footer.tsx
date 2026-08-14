@@ -28,14 +28,19 @@ export function SiteFooter() {
 
           <FooterColumn title={t.footer.buyers}>
             <FooterLink href={href('products')}>{t.nav.catalog}</FooterLink>
+            <FooterLink href={href('sales')}>{t.nav.sales}</FooterLink>
+            <FooterLink href={href('delivery')}>{t.nav.delivery}</FooterLink>
             <FooterLink href={href('requests', 'new')}>{t.nav.postRequest}</FooterLink>
             <FooterLink href={href('suppliers')}>{t.nav.suppliers}</FooterLink>
           </FooterColumn>
 
+          {/* No pricing link. The page still exists and still answers the question when
+              someone asks it, but nothing in the product advertises a price list —
+              there is nothing here that costs the user money. */}
           <FooterColumn title={t.footer.sellers}>
             <FooterLink href={href('products', 'new')}>{t.nav.postProduct}</FooterLink>
             <FooterLink href={href('requests')}>{t.nav.requests}</FooterLink>
-            <FooterLink href={href('pricing')}>{t.footer.pricing}</FooterLink>
+            <FooterLink href={href('register')}>{t.nav.becomeSupplier}</FooterLink>
           </FooterColumn>
 
           <FooterColumn title={t.footer.company}>

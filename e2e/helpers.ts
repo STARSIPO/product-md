@@ -65,11 +65,18 @@ export function watchConsole(page: Page): ConsoleWatcher {
   return { errors }
 }
 
-/** The bottom navigation bar, identified by the one link only it has: "Главная". */
+/**
+ * The bottom navigation bar.
+ *
+ * Identified by «Разместить», which is the one entry only this bar carries — the header
+ * exposes posting through a dropdown, not a link. It used to be identified by «Главная»,
+ * but that tab was dropped when «Доставка» and «Акции» were added: six is the most a
+ * thumb row can hold, and the header logo already goes home.
+ */
 export function bottomNav(page: Page): Locator {
   return page
     .getByRole('navigation', { name: ru.nav.menu })
-    .filter({ has: page.getByRole('link', { name: ru.nav.home, exact: true }) })
+    .filter({ has: page.getByRole('link', { name: ru.nav.post, exact: true }) })
 }
 
 /** The header search input, which is the combobox that opens the suggestion overlay. */

@@ -23,7 +23,7 @@ import { localePath, LOCALES, type Locale } from '@/lib/i18n/config'
 import { slugify } from '@/lib/normalize'
 import { addDays } from '@/lib/utils'
 import { encodeJson } from '@/lib/json'
-import { MAX_IMAGE_BYTES } from '@/lib/constants'
+import { MAX_IMAGE_BYTES, RETAIL_CAPABLE_KINDS } from '@/lib/constants'
 import {
   companySchema,
   emailSchema,
@@ -106,6 +106,41 @@ function toCompanyColumns(input: z.output<typeof companyProfileSchema>) {
     pickupAvailable: input.pickupAvailable ?? false,
     isBuyer: input.isBuyer,
     isSeller: input.isSeller,
+    ...retailColumns(input),
+  }
+}
+
+/**
+ * The consumer-storefront half of the profile.
+ *
+ * Whether a company may run a storefront at all is decided from its `kind`, here, on
+ * the server: the form hides the block for a HoReCa business, but a hidden field is
+ * not a rule. A kind that cannot sell retail has the switch and every term forced
+ * back to "off" rather than merely ignored, so changing kind from RETAIL_CHAIN to
+ * HORECA also takes the company out of the storefront instead of leaving a listing
+ * live behind an invisible setting.
+ */
+function retailColumns(input: z.output<typeof companyProfileSchema>) {
+  const capable = RETAIL_CAPABLE_KINDS.includes(input.kind)
+
+  if (!capable) {
+    return {
+      kind: input.kind,
+      isRetail: false,
+      retailDeliveryFeeBani: null,
+      retailFreeFromBani: null,
+      retailDeliveryNote: null,
+    }
+  }
+
+  return {
+    kind: input.kind,
+    isRetail: input.isRetail ?? false,
+    // A fee of zero is a real answer ("we deliver free"), so only an omitted field
+    // becomes NULL — "the shop has not said".
+    retailDeliveryFeeBani: input.retailDeliveryFeeBani ?? null,
+    retailFreeFromBani: input.retailFreeFromBani ?? null,
+    retailDeliveryNote: input.retailDeliveryNote ?? null,
   }
 }
 
@@ -222,6 +257,9 @@ export async function updateCompanyProfile(raw: unknown): Promise<ActionResult<v
 
     revalidatePath('/[locale]/dashboard/company', 'page')
     revalidatePath('/[locale]/suppliers/[slug]', 'page')
+    // Switching the storefront on or off, or changing what delivery costs, has to reach
+    // the consumer pages immediately — they read these columns on every card.
+    revalidatePath('/[locale]/delivery', 'page')
 
     return ok()
   })

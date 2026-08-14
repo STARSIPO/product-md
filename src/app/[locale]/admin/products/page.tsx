@@ -3,8 +3,8 @@ import Link from 'next/link'
 import type { Prisma } from '@prisma/client'
 import { getDictionary, fmt, resolveLocale } from '@/lib/i18n'
 import { localePath } from '@/lib/i18n/config'
-import { formatDateTime } from '@/lib/i18n/format'
-import { formatMoney } from '@/lib/money'
+import { formatDate, formatDateTime } from '@/lib/i18n/format'
+import { formatMoney, isOnSale, salePercent } from '@/lib/money'
 import { buildQuery, parsePage } from '@/lib/utils'
 import { PRODUCT_STATUSES } from '@/lib/constants'
 import { requireAdmin } from '@/server/auth/guards'
@@ -16,6 +16,7 @@ import {
   type DataColumn,
 } from '@/components/admin/data-table'
 import { ListingAdminActions } from '@/components/admin/decision-dialog'
+import { ClearSaleButton } from '../_components/retail-controls'
 import { Badge, Input, Pagination, Select, StatusBadge } from '@/components/ui'
 
 /**
@@ -29,6 +30,11 @@ import { Badge, Input, Pagination, Select, StatusBadge } from '@/components/ui'
  * Alongside it sit the editorial levers that have no moderation equivalent at all: a
  * free bump, a pin on the home page, and the escape hatch for a listing the nightly job
  * paused because the balance ran out but the money arrived by bank transfer.
+ *
+ * The «Акции» column is the fairness check for the discount surface. A listing gets there
+ * by having a genuinely higher previous price, so the only way to game it is to invent
+ * one — and the answer to that is to end the discount, not to pull the listing. The
+ * retail marker beside it says whether the same listing is also on sale to households.
  */
 
 export const dynamic = 'force-dynamic'
@@ -82,13 +88,18 @@ export default async function AdminProductsPage({
         title: true,
         status: true,
         priceBani: true,
+        oldPriceBani: true,
+        discountEndsAt: true,
+        isRetail: true,
+        retailPriceBani: true,
+        retailMinQty: true,
         unit: true,
         viewsCount: true,
         createdAt: true,
         isHomepagePinned: true,
         pausedForBalance: true,
         bumpedAt: true,
-        company: { select: { id: true, displayName: true } },
+        company: { select: { id: true, displayName: true, isRetail: true } },
       },
     }),
   ])
@@ -134,6 +145,63 @@ export default async function AdminProductsPage({
       ),
     },
     {
+      key: 'sale',
+      header: t.sales.badge,
+      cell: (row) => {
+        if (row.oldPriceBani === null) {
+          return <span className="text-caption text-muted-foreground">—</span>
+        }
+
+        // `isOnSale` is the single answer every surface uses, so a discount whose end
+        // date has passed but which the nightly job has not yet rolled back reads here
+        // as finished rather than as a live −20%.
+        const live = isOnSale(row)
+
+        return (
+          <span className="inline-flex flex-col items-start gap-1">
+            <Badge variant={live ? 'success' : 'neutral'} size="sm">
+              {fmt(t.sales.percentOff, { percent: salePercent(row) })}
+            </Badge>
+            <span className="tnum text-caption text-muted-foreground">
+              {fmt(t.sales.oldPrice, { price: formatMoney(row.oldPriceBani, locale) })}
+            </span>
+            <span className="text-caption text-muted-foreground">
+              {row.discountEndsAt === null
+                ? t.sales.noEndDate
+                : live
+                  ? fmt(t.sales.statusEndsOn, { date: formatDate(row.discountEndsAt, locale) })
+                  : t.sales.statusExpired}
+            </span>
+          </span>
+        )
+      },
+    },
+    {
+      key: 'retail',
+      header: t.retail.sellTitle,
+      cell: (row) =>
+        row.isRetail ? (
+          <span className="inline-flex flex-col items-start gap-1">
+            {/* A listing marked for retail inside a company that has not switched the
+                storefront on is invisible to shoppers — the warning colour and the hint
+                say so, because from the seller's side it looks published. */}
+            <Badge variant={row.company.isRetail ? 'accent' : 'warning'} size="sm">
+              {t.nav.deliveryShort}
+            </Badge>
+            <span className="tnum text-caption text-muted-foreground">
+              {formatMoney(row.retailPriceBani ?? row.priceBani, locale)}
+              {' · '}
+              {fmt(t.retail.minQty, { quantity: row.retailMinQty })}
+            </span>
+            {row.company.isRetail ? null : (
+              <span className="text-caption text-warning">{t.retail.sellDisabled}</span>
+            )}
+          </span>
+        ) : (
+          <span className="text-caption text-muted-foreground">—</span>
+        ),
+    },
+    {
       key: 'status',
       header: t.common.status,
       cell: (row) => (
@@ -173,13 +241,21 @@ export default async function AdminProductsPage({
       header: t.common.actions,
       align: 'right',
       cell: (row) => (
-        <ListingAdminActions
-          productId={row.id}
-          status={row.status}
-          statusOptions={statusOptions}
-          pinned={row.isHomepagePinned}
-          pausedForBalance={row.pausedForBalance}
-        />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {row.oldPriceBani === null ? null : (
+            <ClearSaleButton
+              productId={row.id}
+              restoredPrice={formatMoney(row.oldPriceBani, locale)}
+            />
+          )}
+          <ListingAdminActions
+            productId={row.id}
+            status={row.status}
+            statusOptions={statusOptions}
+            pinned={row.isHomepagePinned}
+            pausedForBalance={row.pausedForBalance}
+          />
+        </div>
       ),
     },
   ]
