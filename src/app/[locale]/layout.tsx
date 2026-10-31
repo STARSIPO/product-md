@@ -14,6 +14,7 @@ import { getCurrentUser } from '@/server/auth/session'
 import { getHeaderCounters } from '@/server/services/counters'
 import { getPopularCategories } from '@/server/services/categories'
 import { env } from '@/env'
+import { themeInitScript } from '@/lib/theme'
 
 /**
  * This is the root layout.
@@ -72,7 +73,10 @@ export async function generateMetadata({
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0F6B45',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#0F6B45' },
+    { media: '(prefers-color-scheme: dark)', color: '#16191A' },
+  ],
   width: 'device-width',
   initialScale: 1,
 }
@@ -96,7 +100,11 @@ export default async function LocaleLayout({
   const counters = await getHeaderCounters(user?.id ?? null)
 
   return (
+    // suppressHydrationWarning: themeInitScript adds `dark` to <html> before React loads.
     <html lang={LOCALE_TAGS[locale]} className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-dvh bg-background font-sans text-base text-foreground">
         <I18nProvider locale={locale} dictionary={t}>
           <ToastProvider>

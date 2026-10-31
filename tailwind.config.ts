@@ -6,6 +6,7 @@ import type { Config } from 'tailwindcss'
  * See docs/DESIGN_SYSTEM.md for the rationale behind each token.
  */
 const config: Config = {
+  darkMode: 'class',
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     container: {
@@ -90,9 +91,9 @@ const config: Config = {
          * Each level is two shadows: a tight contact shadow that anchors the edge, and
          * a wide soft one that lifts it off the background.
          */
-        card: '0 1px 2px 0 rgb(16 24 32 / 0.05), 0 4px 12px -4px rgb(16 24 32 / 0.08)',
-        hover: '0 2px 4px 0 rgb(16 24 32 / 0.06), 0 10px 24px -8px rgb(16 24 32 / 0.14)',
-        pop: '0 10px 32px -8px rgb(16 24 32 / 0.16), 0 3px 8px -3px rgb(16 24 32 / 0.07)',
+        card: '0 1px 2px 0 rgb(var(--shadow-color) / 0.05), 0 4px 12px -4px rgb(var(--shadow-color) / 0.08)',
+        hover: '0 2px 4px 0 rgb(var(--shadow-color) / 0.06), 0 10px 24px -8px rgb(var(--shadow-color) / 0.14)',
+        pop: '0 10px 32px -8px rgb(var(--shadow-color) / 0.16), 0 3px 8px -3px rgb(var(--shadow-color) / 0.07)',
       },
       keyframes: {
         'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },

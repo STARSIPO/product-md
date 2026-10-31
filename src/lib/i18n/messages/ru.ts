@@ -97,6 +97,7 @@ export const ru = {
     admin: 'Админ-панель',
     moderation: 'Модерация',
     language: 'Язык',
+    theme: 'Сменить тему',
     post: 'Разместить',
     postProduct: 'Продать товар',
     postProductHint: 'Опубликуйте объявление — покупатели найдут вас',

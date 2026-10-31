@@ -41,6 +41,56 @@
     --color-warning-soft: 252 241 224;
     --color-destructive: 176 35 31;
     --color-destructive-soft: 253 233 232;
+
+    /* Tint of every elevation shadow (see boxShadow in tailwind.config.ts). */
+    --shadow-color: 16 24 32;
+  }
+
+  /*
+   * Dark theme. `.dark` on <html> is set before first paint by themeInitScript
+   * (src/lib/theme.ts) and toggled by the header's ThemeToggle.
+   *
+   * Screen only: printing a deal agreement from the dark theme would otherwise put
+   * light text on the white print background.
+   */
+  @media screen {
+    .dark {
+      /* Near-black with a green cast, so the brand green reads as part of the page. */
+      --color-background: 15 17 16;
+      --color-foreground: 242 243 241;
+      --color-card: 22 25 26;
+      --color-card-foreground: 242 243 241;
+
+      --color-muted: 28 32 31;
+      --color-muted-foreground: 168 174 171;
+
+      /* Lifted green: #0F6B45 disappears on a dark page. #34A06F on the card = 5.4:1,
+         the dark label on #34A06F = 5.8:1. */
+      --color-primary: 52 160 111;
+      --color-primary-hover: 79 185 138;
+      --color-primary-soft: 22 48 36;
+      --color-primary-foreground: 8 18 13;
+
+      --color-secondary: 32 36 35;
+      --color-secondary-foreground: 242 243 241;
+
+      --color-accent: 209 138 82;
+      --color-accent-soft: 52 36 24;
+      --color-accent-foreground: 20 14 8;
+
+      --color-border: 38 42 41;
+      --color-input: 56 62 60;
+      --color-ring: 79 185 138;
+
+      --color-success: 79 191 139;
+      --color-success-soft: 22 48 36;
+      --color-warning: 224 164 92;
+      --color-warning-soft: 56 40 20;
+      --color-destructive: 229 83 75;
+      --color-destructive-soft: 64 26 25;
+
+      --shadow-color: 0 0 0;
+    }
   }
 
   * {
@@ -117,6 +167,11 @@
   .skeleton::after {
     @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-black/[0.045] to-transparent;
     content: '';
+  }
+
+  /* A dark sheen is invisible on a dark skeleton. */
+  .dark .skeleton::after {
+    @apply via-white/[0.05];
   }
 
   /* Multi-line clamp helpers used by cards. */

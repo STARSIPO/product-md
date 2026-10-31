@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { Button, buttonVariants } from '@/components/ui'
 import { GlobalSearch } from '@/components/search/global-search'
 import { LanguageSwitcher } from './language-switcher'
+import { ThemeToggle } from './theme-toggle'
 import type { HeaderCounters } from '@/server/services/counters'
 
 export interface HeaderUser {
@@ -75,7 +76,7 @@ export function SiteHeader({
             `min-w-0 flex-1`, so anything wider eats the search rather than the page.
             That is why delivery uses its short label here and its full one everywhere
             the space is not contested. */}
-        <nav className="hidden items-center gap-0.5 lg:flex" aria-label={t.nav.menu}>
+        <nav className="hidden items-center gap-0.5 xl:flex" aria-label={t.nav.menu}>
           <HeaderLink href={href('products')}>{t.nav.catalog}</HeaderLink>
           <HeaderLink href={href('sales')}>{t.nav.sales}</HeaderLink>
           <HeaderLink href={href('delivery')}>{t.nav.deliveryShort}</HeaderLink>
@@ -85,7 +86,7 @@ export function SiteHeader({
 
         {/* The search field is the centre of the header; `min-w-0` keeps it shrinkable
             so nothing pushes the row into a horizontal scroll on a 320px screen. */}
-        <div className="min-w-0 flex-1 lg:max-w-xl">
+        <div className="min-w-0 flex-1 xl:max-w-xl">
           <GlobalSearch popularCategories={popularCategories} />
         </div>
 
@@ -114,6 +115,10 @@ export function SiteHeader({
               />
             </>
           ) : null}
+
+          {/* Visible at every width: on phones it sits in the bar beside the menu
+              button instead of being buried inside the menu. */}
+          <ThemeToggle />
 
           <div className="hidden md:block">
             <LanguageSwitcher />
@@ -234,7 +239,7 @@ export function SiteHeader({
 
           <button
             type="button"
-            className="grid h-10 w-10 place-items-center rounded-md transition-colors hover:bg-muted lg:hidden"
+            className="grid h-10 w-10 place-items-center rounded-md transition-colors hover:bg-muted xl:hidden"
             onClick={() => setMenuOpen((open) => !open)}
             aria-expanded={menuOpen}
             aria-label={menuOpen ? t.nav.closeMenu : t.nav.openMenu}
@@ -249,7 +254,7 @@ export function SiteHeader({
       </div>
 
       {menuOpen ? (
-        <div className="animate-slide-up bg-card shadow-card lg:hidden">
+        <div className="animate-slide-up bg-card shadow-card xl:hidden">
           <nav className="container flex flex-col py-2" aria-label={t.nav.menu}>
             <MobileLink href={href('products')} onClick={() => setMenuOpen(false)}>
               {t.nav.catalog}

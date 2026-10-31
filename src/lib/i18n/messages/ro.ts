@@ -96,6 +96,7 @@ export const ro: Dictionary = {
     admin: 'Panou de administrare',
     moderation: 'Moderare',
     language: 'Limbă',
+    theme: 'Schimbă tema',
     post: 'Publică',
     postProduct: 'Vinde un produs',
     postProductHint: 'Publicați un anunț — cumpărătorii vă vor găsi',
